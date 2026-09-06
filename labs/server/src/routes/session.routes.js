@@ -23,4 +23,25 @@ router.get('/verify', verifyLabAccessToken, (req, res) => {
   });
 });
 
+/**
+ * GET /api/lab-session/demo-token
+ * Generates an authentic signed token for live presentation and testing demos.
+ */
+router.get('/demo-token', (req, res) => {
+  const jwt = require('jsonwebtoken');
+  const lab_id = req.query.lab_id || 'lab-sql-employees';
+  const secret = process.env.JWT_SHARED_SECRET || 'kaushalai_virtual_labs_secure_jwt_shared_secret_2026_x89a';
+  const token = jwt.sign(
+    {
+      user_id: '6a9716b23a22a65916c92285',
+      course_id: '6a996d6d266163e0a9606c61',
+      lab_id,
+      user_name: 'Priya Nair (Statistical Officer)'
+    },
+    secret,
+    { expiresIn: '2h' }
+  );
+  res.status(200).json({ status: 'ok', token, lab_id });
+});
+
 module.exports = router;

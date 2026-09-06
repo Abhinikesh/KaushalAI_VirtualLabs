@@ -11,7 +11,14 @@ const taskSchema = new mongoose.Schema({
   },
   validation_type: {
     type: String,
-    enum: ['output_contains', 'variable_equals', 'function_returns'],
+    enum: [
+      'output_contains',
+      'variable_equals',
+      'function_returns',
+      'row_count_equals',
+      'result_contains',
+      'column_values_match'
+    ],
     required: true
   },
   validation_config: {
@@ -40,7 +47,7 @@ const labSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['python_sandbox'],
+    enum: ['python_sandbox', 'sql_sandbox'],
     default: 'python_sandbox'
   },
   course_id: {
@@ -53,6 +60,14 @@ const labSchema = new mongoose.Schema({
   }],
   config: {
     starter_code: {
+      type: String,
+      default: ''
+    },
+    schema_sql: {
+      type: String,
+      default: ''
+    },
+    starter_query: {
       type: String,
       default: ''
     },

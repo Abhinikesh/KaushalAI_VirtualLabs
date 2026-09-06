@@ -60,4 +60,16 @@ export const verifyLabSession = async (explicitToken = null) => {
   return response.data;
 };
 
+// Fetch Lab details and configuration
+export const getLabDetails = async (labId) => {
+  const response = await api.get(`/api/labs/${labId}`);
+  return response.data;
+};
+
+// Submit lab attempt
+export const submitLabAttempt = async (attemptData) => {
+  const response = await api.post('/api/lab-attempts', attemptData);
+  return response.data;
+};
+
 export default api;

@@ -42,6 +42,8 @@ async function getLabById(req, res, next) {
         competency_ids: lab.competency_ids,
         config: {
           starter_code: lab.config?.starter_code || '',
+          schema_sql: lab.config?.schema_sql || '',
+          starter_query: lab.config?.starter_query || '',
           instructions: lab.config?.instructions || '',
           tasks: lab.config?.tasks || [],
           expected_packages: lab.config?.expected_packages || []
@@ -88,6 +90,19 @@ async function saveLabAttempt(req, res, next) {
 
     console.log(`[LabAttempt] Recorded attempt for user ${user_id} on ${lab_id} (Score: ${completedScore}%, Status: ${attempt.status})`);
 
+    // If lab is completed, notify the main KaushalAI app via server-to-server webhook
+    if (isCompleted && course_id) {
+      notifyMainAppLabCompletion({
+        user_id: attempt.user_id,
+        course_id: attempt.course_id,
+        lab_id: attempt.lab_id,
+        score: attempt.score,
+        completed_at: attempt.completed_at || new Date()
+      }).catch((err) => {
+        console.error('[Labs Webhook] Async dispatch error:', err.message);
+      });
+    }
+
     res.status(200).json({
       status: 'ok',
       attempt: {
@@ -105,7 +120,50 @@ async function saveLabAttempt(req, res, next) {
   }
 }
 
+/**
+ * Helper to dispatch completion webhook back to KaushalAI main backend.
+ * Protected with X-Labs-Webhook-Secret.
+ * Isolated in try/catch to never fail student attempt submission.
+ */
+async function notifyMainAppLabCompletion({ user_id, course_id, lab_id, score, completed_at }) {
+  try {
+    const rawUrl = process.env.MAIN_APP_API_URL || 'http://localhost:5000';
+    const baseUrl = rawUrl.replace(/\/api\/?$/, '');
+    const webhookUrl = `${baseUrl}/api/labs/webhook/completion`;
+    const webhookSecret = process.env.LABS_WEBHOOK_SECRET || 'kaushalai_webhook_secret_s2s_secure_98e1f0ba72c448a';
+
+    console.log(`[Labs Webhook] Dispatching completion webhook to ${webhookUrl} for user ${user_id}, course ${course_id}, lab ${lab_id}`);
+
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Labs-Webhook-Secret': webhookSecret
+      },
+      body: JSON.stringify({
+        user_id,
+        course_id,
+        lab_id,
+        score,
+        completed_at
+      })
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      console.warn(`[Labs Webhook] Main app returned error status (${response.status}): ${errText}`);
+    } else {
+      const data = await response.json();
+      console.log(`[Labs Webhook] Confirmation received from main app:`, data.message || 'ok');
+    }
+  } catch (err) {
+    console.error(`[Labs Webhook] Failed to connect to main app webhook: ${err.message}. Attempt is safely persisted locally.`);
+  }
+}
+
 module.exports = {
   getLabById,
-  saveLabAttempt
+  saveLabAttempt,
+  notifyMainAppLabCompletion
 };
+
