@@ -1,0 +1,12 @@
+{
+  "name": "kaushalai-virtual-labs",
+  "version": "1.0.0",
+  "description": "KaushalAI Virtual Labs workspace root",
+  "scripts": {
+    "server:dev": "npm --prefix server run dev",
+    "server:start": "npm --prefix server start",
+    "client:dev": "npm --prefix client run dev",
+    "client:build": "npm --prefix client run build",
+    "client:preview": "npm --prefix client run preview"
+  }
+}
