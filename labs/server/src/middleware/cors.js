@@ -10,12 +10,21 @@ const defaultDevOrigins = [
 ];
 
 const configureCors = () => {
-  const allowedOriginEnv = process.env.ALLOWED_ORIGIN;
-  const configuredOrigins = allowedOriginEnv
-    ? allowedOriginEnv.split(',').map((origin) => origin.trim())
-    : [];
+  const customOrigins = [];
 
-  const allowedOrigins = [...new Set([...defaultDevOrigins, ...configuredOrigins])];
+  if (process.env.MAIN_APP_URL) {
+    customOrigins.push(process.env.MAIN_APP_URL.replace(/\/+$/, ''));
+  }
+  if (process.env.LABS_CLIENT_URL) {
+    customOrigins.push(process.env.LABS_CLIENT_URL.replace(/\/+$/, ''));
+  }
+  if (process.env.ALLOWED_ORIGIN) {
+    process.env.ALLOWED_ORIGIN.split(',').forEach((o) => {
+      if (o.trim()) customOrigins.push(o.trim().replace(/\/+$/, ''));
+    });
+  }
+
+  const allowedOrigins = [...new Set([...defaultDevOrigins, ...customOrigins])];
 
   return cors({
     origin: (origin, callback) => {
@@ -24,7 +33,8 @@ const configureCors = () => {
         return callback(null, true);
       }
 
-      if (allowedOrigins.includes(origin)) {
+      const normalizedOrigin = origin.replace(/\/+$/, '');
+      if (allowedOrigins.includes(normalizedOrigin)) {
         return callback(null, true);
       }
 

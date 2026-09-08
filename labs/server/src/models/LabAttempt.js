@@ -4,23 +4,20 @@ const labAttemptSchema = new mongoose.Schema({
   user_id: {
     type: String,
     required: true,
-    index: true
+    index: true,
+    trim: true
   },
   lab_id: {
     type: String,
     required: true,
-    index: true
+    index: true,
+    trim: true,
+    ref: 'Lab'
   },
-  course_id: {
+  course_context: {
     type: String,
-    required: true
-  },
-  started_at: {
-    type: Date,
-    default: Date.now
-  },
-  completed_at: {
-    type: Date
+    default: '',
+    trim: true
   },
   status: {
     type: String,
@@ -32,16 +29,25 @@ const labAttemptSchema = new mongoose.Schema({
     default: ''
   },
   tasks_completed: [{
-    type: String
+    type: String,
+    trim: true
   }],
   score: {
     type: Number,
     min: 0,
     max: 100,
     default: 0
+  },
+  started_at: {
+    type: Date,
+    default: Date.now
+  },
+  completed_at: {
+    type: Date,
+    default: null
   }
 }, {
-  timestamps: true,
+  timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
   collection: 'lab_attempts'
 });
 

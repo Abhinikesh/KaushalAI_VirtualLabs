@@ -60,16 +60,36 @@ export const verifyLabSession = async (explicitToken = null) => {
   return response.data;
 };
 
+// List all active labs (catalog)
+export const getLabsList = async () => {
+  const response = await api.get('/api/labs');
+  return response.data;
+};
+
 // Fetch Lab details and configuration
 export const getLabDetails = async (labId) => {
   const response = await api.get(`/api/labs/${labId}`);
   return response.data;
 };
 
-// Submit lab attempt
-export const submitLabAttempt = async (attemptData) => {
-  const response = await api.post('/api/lab-attempts', attemptData);
+// Start or resume a lab attempt (protected by verifyLabAccess)
+export const startLabAttempt = async () => {
+  const response = await api.post('/api/lab-attempts/start');
   return response.data;
+};
+
+// Complete a lab attempt (protected by verifyLabAccess)
+export const completeLabAttempt = async (attemptId, data) => {
+  const response = await api.post(`/api/lab-attempts/${attemptId}/complete`, data);
+  return response.data;
+};
+
+// Legacy alias for submitLabAttempt
+export const submitLabAttempt = async (attemptData) => {
+  return startLabAttempt().then((res) => {
+    const attemptId = res.attempt?._id;
+    return completeLabAttempt(attemptId, attemptData);
+  });
 };
 
 export default api;

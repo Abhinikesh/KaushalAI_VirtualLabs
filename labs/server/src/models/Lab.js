@@ -3,23 +3,18 @@ const mongoose = require('mongoose');
 const taskSchema = new mongoose.Schema({
   id: {
     type: String,
-    required: true
+    required: true,
+    trim: true
   },
   description: {
     type: String,
-    required: true
+    required: true,
+    trim: true
   },
   validation_type: {
     type: String,
-    enum: [
-      'output_contains',
-      'variable_equals',
-      'function_returns',
-      'row_count_equals',
-      'result_contains',
-      'column_values_match'
-    ],
-    required: true
+    required: true,
+    trim: true
   },
   validation_config: {
     type: mongoose.Schema.Types.Mixed,
@@ -48,21 +43,28 @@ const labSchema = new mongoose.Schema({
   type: {
     type: String,
     enum: ['python_sandbox', 'sql_sandbox'],
-    default: 'python_sandbox'
+    required: true
   },
-  course_id: {
+  course_title: {
     type: String,
-    required: true,
-    index: true
+    default: '',
+    trim: true
   },
-  competency_ids: [{
-    type: String
+  competency_tags: [{
+    type: String,
+    trim: true
   }],
   config: {
+    // For python_sandbox:
     starter_code: {
       type: String,
       default: ''
     },
+    expected_packages: [{
+      type: String,
+      trim: true
+    }],
+    // For sql_sandbox:
     schema_sql: {
       type: String,
       default: ''
@@ -71,17 +73,20 @@ const labSchema = new mongoose.Schema({
       type: String,
       default: ''
     },
+    // Shared:
     instructions: {
       type: String,
       default: ''
     },
-    tasks: [taskSchema],
-    expected_packages: [{
-      type: String
-    }]
+    tasks: [taskSchema]
+  },
+  is_active: {
+    type: Boolean,
+    default: true,
+    index: true
   }
 }, {
-  timestamps: true,
+  timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
   collection: 'labs'
 });
 

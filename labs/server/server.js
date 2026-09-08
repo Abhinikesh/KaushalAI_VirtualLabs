@@ -8,23 +8,20 @@ const healthRoutes = require('./src/routes/health.routes');
 const indexRoutes = require('./src/routes/index.routes');
 const sessionRoutes = require('./src/routes/session.routes');
 const labsRoutes = require('./src/routes/labs.routes');
-const { seedLabs } = require('./src/services/seedLabs.service');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
 
-// Security & Body parsing middleware
+// Middleware
 app.use(helmet());
 app.use(configureCors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Connect to isolated Labs MongoDB and auto-seed initial labs
-connectDB().then(() => {
-  seedLabs();
-});
+// Connect to isolated Labs MongoDB (kaushalai_labs)
+connectDB();
 
-// Mount Routes
+// Routes
 app.use('/', indexRoutes);
 app.use('/', healthRoutes);
 app.use('/api/lab-session', sessionRoutes);
@@ -48,9 +45,9 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start Server
-const server = app.listen(PORT, () => {
-  console.log(`[KaushalAI Labs Backend] Running on http://localhost:${PORT}`);
+// Start Server bound to 0.0.0.0
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(`[KaushalAI Labs Backend] Running on http://0.0.0.0:${PORT}`);
   console.log(`[KaushalAI Labs Backend] Health Check available at http://localhost:${PORT}/health`);
 });
 
