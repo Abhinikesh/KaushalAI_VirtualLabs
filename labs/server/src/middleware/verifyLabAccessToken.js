@@ -29,7 +29,14 @@ const verifyLabAccessToken = (req, res, next) => {
     });
   }
 
-  const secret = process.env.JWT_SHARED_SECRET || 'kaushalai_virtual_labs_secure_jwt_shared_secret_2026_x89a';
+  const secret = process.env.JWT_SHARED_SECRET;
+  if (!secret) {
+    console.error('[verifyLabAccessToken] JWT_SHARED_SECRET is not configured in environment.');
+    return res.status(500).json({
+      error: 'InternalServerError',
+      message: 'Server authentication configuration error.'
+    });
+  }
 
   try {
     const decoded = jwt.verify(token, secret);
