@@ -552,6 +552,53 @@ function hasKeyword(text, keyword) {
 // 5. Log summary
 console.log(\`[TEXT_PROCESSED_SUMMARY] Words counted: \${wordCount}\`);
 `;
+      } else if (lab?.lab_id === 'lab-js-calculator') {
+        demoJs = `/**
+ * Calculator function
+ */
+function calculate(a, b, operation) {
+  if (operation === "divide" && b === 0) {
+    return "Error: Division by zero";
+  }
+  switch (operation) {
+    case "add": return a + b;
+    case "subtract": return a - b;
+    case "multiply": return a * b;
+    case "divide": return a / b;
+    default: return 0;
+  }
+}
+
+const sumResult = calculate(45, 15, "add");
+const divResult = calculate(100, 4, "divide");
+const zeroDivResult = calculate(50, 0, "divide");
+
+console.log(\`[CALCULATOR_READY] Sum: \${sumResult}, Div: \${divResult}\`);
+`;
+      } else if (lab?.lab_id === 'lab-js-dates') {
+        demoJs = `/**
+ * Calculate difference in days
+ */
+function daysBetween(startDateStr, endDateStr) {
+  const d1 = new Date(startDateStr);
+  const d2 = new Date(endDateStr);
+  const diffTime = Math.abs(d2 - d1);
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+}
+
+/**
+ * Format date string into DD/MM/YYYY
+ */
+function formatToIndianDate(dateStr) {
+  const [year, month, day] = dateStr.split('-');
+  return \`\${day}/\${month}/\${year}\`;
+}
+
+const sampleDays = daysBetween("2026-01-01", "2026-01-11");
+const formattedSample = formatToIndianDate("2026-08-15");
+
+console.log(\`[DATE_UTILITIES_VERIFIED] Days diff: \${sampleDays}, Formatted: \${formattedSample}\`);
+`;
       } else {
         demoJs = `// Simulated API service
 function mockFetchUsers() {
@@ -584,6 +631,7 @@ await loadAndProcessUsers();
 console.log(\`[ASYNC_FETCH_COMPLETE] Active users: \${activeUserCount}, Total points: \${totalActivePoints}\`);
 `;
       }
+
 
       setCode(demoJs);
       const tasks = lab?.config?.tasks || [];
@@ -1030,6 +1078,30 @@ print(f"[CLEANED_DATASET_SUMMARY] Valid records: {valid_districts_count}, Avg Li
               {lab?.config?.instructions}
             </div>
           </div>
+
+          {/* JavaScript Environment Tip */}
+          {isJs && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '0.5rem',
+                padding: '0.65rem 0.85rem',
+                background: '#fffbeb',
+                border: '1px solid #fde68a',
+                borderRadius: 'var(--radius-md)',
+                fontSize: '0.78rem',
+                color: '#92400e',
+                lineHeight: 1.4
+              }}
+            >
+              <Info size={16} color="#d97706" style={{ flexShrink: 0, marginTop: '2px' }} />
+              <div>
+                <strong>Sandbox Tip:</strong> Runs in an isolated browser environment with infinite-loop safeguards and a 4s timeout. Avoid unbounded loops; if your code hangs, reload the page.
+              </div>
+            </div>
+          )}
+
 
           {/* Interactive SQL Schema Browser (SQL Labs only) */}
           {isSql && (

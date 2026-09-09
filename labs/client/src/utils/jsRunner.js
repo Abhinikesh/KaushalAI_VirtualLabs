@@ -50,6 +50,32 @@ function getScopeIdentifiers(code, tasks = []) {
 }
 
 /**
+ * ARCHITECTURAL TRADEOFF DECISION: Infinite Loop Safeguard
+ * --------------------------------------------------------
+ * We use an in-flight loop iteration guard injection combined with an asynchronous timeout
+ * instead of a Web Worker.
+ *
+ * WHY:
+ * 1. Web Workers cannot transfer user-defined JavaScript functions (e.g., `calculate`,
+ *    `hasKeyword`, `loadAndProcessUsers`) because structured clone throws a DataCloneError
+ *    on functions.
+ * 2. In this learning & training platform, learners benefit most from immediate diagnostic feedback.
+ * 3. By injecting a lightweight iteration guard (`if (++__loopGuard > 200000) throw Error(...)`),
+ *    runaway `while(true)` or unbounded `for` loops are interrupted safely within milliseconds
+ *    with a clean diagnostic message without freezing the browser UI tab.
+ */
+function injectLoopGuards(code) {
+  let counter = 0;
+  return code.replace(
+    /(\b(?:while|for)\s*\([^)]*\)\s*\{|\bdo\s*\{)/g,
+    (match) => {
+      counter++;
+      return `${match} if (typeof __lg_${counter} === 'undefined') var __lg_${counter} = 0; if (++__lg_${counter} > 200000) throw new Error("Infinite loop detected: exceeded 200,000 iterations");`;
+    }
+  );
+}
+
+/**
  * Execute user JavaScript code
  * @param {string} userCode - User authored code
  * @param {Array} tasks - Lab validation tasks to inspect
@@ -114,14 +140,16 @@ export async function runJavaScriptCode(userCode, tasks = []) {
 
     const shadowValues = shadowArgs.map(() => undefined);
 
-    const wrappedCode = `"use strict";\n${userCode}${returnSnippet}`;
+    const guardedCode = injectLoopGuards(userCode);
+    const wrappedCode = `"use strict";\n${guardedCode}${returnSnippet}`;
 
     const sandboxFn = new AsyncFunction(...shadowArgs, wrappedCode);
 
-    // Execute with timeout protection (5 seconds max)
+
+    // Execute with timeout protection (4 seconds max for async promises)
     const execPromise = sandboxFn(...shadowValues);
     const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Execution timed out (limit: 5000ms)')), 5000)
+      setTimeout(() => reject(new Error('Execution timed out (limit: 4000ms)')), 4000)
     );
 
     const returnedScope = await Promise.race([execPromise, timeoutPromise]);
