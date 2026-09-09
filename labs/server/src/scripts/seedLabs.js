@@ -525,6 +525,157 @@ loadAndProcessUsers().then(() => {
         }
       ]
     }
+  },
+  {
+    lab_id: 'lab-js-calculator',
+    title: 'Core Functions: Arithmetic Calculator & Input Validation',
+    description: 'Build a robust arithmetic calculation function supporting addition, subtraction, multiplication, division, and error handling for zero division.',
+    type: 'js_sandbox',
+    course_title: 'Modern JavaScript & Web Application Development',
+    competency_tags: ['JavaScript Basics', 'Functions & Logic', 'Error Handling', 'IT & Digital Skills'],
+    is_active: true,
+    config: {
+      instructions: `### Lab Objective: Functions, Operators & Conditional Logic
+Implement a reusable mathematical calculator function handling basic operations and mathematical boundary checks.
+
+#### Tasks:
+1. **Addition**: \`calculate(20, 30, "add")\` returns \`50\`.
+2. **Multiplication**: \`calculate(7, 8, "multiply")\` returns \`56\`.
+3. **Division by Zero Protection**: \`calculate(10, 0, "divide")\` returns \`"Error: Division by zero"\`.
+4. **Log Report**: Log message containing \`[CALCULATOR_READY]\`.`,
+      starter_code: `/**
+ * Calculator function
+ * @param {number} a - First operand
+ * @param {number} b - Second operand
+ * @param {string} operation - "add", "subtract", "multiply", "divide"
+ * @returns {number|string} Result or error message
+ */
+function calculate(a, b, operation) {
+  // TODO 1: Implement "add", "subtract", "multiply", "divide"
+  // TODO 2: Return "Error: Division by zero" if operation === "divide" and b === 0
+  return 0;
+}
+
+// Sample test calculations
+const sumResult = calculate(45, 15, "add");
+const divResult = calculate(100, 4, "divide");
+const zeroDivResult = calculate(50, 0, "divide");
+
+// TODO 3: Print summary report with tag '[CALCULATOR_READY]'
+console.log(\`[CALCULATOR_READY] Sum: \${sumResult}, Div: \${divResult}\`);
+`,
+      tasks: [
+        {
+          id: 'task_calc_add',
+          description: 'calculate(20, 30, "add") returns 50',
+          validation_type: 'function_returns',
+          validation_config: {
+            function_name: 'calculate',
+            args: [20, 30, 'add'],
+            expected: 50
+          }
+        },
+        {
+          id: 'task_calc_multiply',
+          description: 'calculate(7, 8, "multiply") returns 56',
+          validation_type: 'function_returns',
+          validation_config: {
+            function_name: 'calculate',
+            args: [7, 8, 'multiply'],
+            expected: 56
+          }
+        },
+        {
+          id: 'task_calc_zero_div',
+          description: 'calculate(10, 0, "divide") returns "Error: Division by zero"',
+          validation_type: 'function_returns',
+          validation_config: {
+            function_name: 'calculate',
+            args: [10, 0, 'divide'],
+            expected: 'Error: Division by zero'
+          }
+        },
+        {
+          id: 'task_calc_log',
+          description: 'Console output contains "[CALCULATOR_READY]"',
+          validation_type: 'console_output_contains',
+          validation_config: {
+            expected: '[CALCULATOR_READY]'
+          }
+        }
+      ]
+    }
+  },
+  {
+    lab_id: 'lab-js-dates',
+    title: 'Date & Time Utilities: Difference Calculation & Formatting',
+    description: 'Calculate the number of calendar days between two dates and format ISO date strings into readable localized Indian date formats.',
+    type: 'js_sandbox',
+    course_title: 'Modern JavaScript & Web Application Development',
+    competency_tags: ['JavaScript Basics', 'Date Processing', 'Utility Functions', 'IT & Digital Skills'],
+    is_active: true,
+    config: {
+      instructions: `### Lab Objective: Date & Time Manipulation
+Practice parsing, formatting, and computing durations between dates using JavaScript's native \`Date\` object.
+
+#### Tasks:
+1. **Days Difference**: Implement \`daysBetween(startDateStr, endDateStr)\` returning whole days difference.
+2. **Date Localization**: Implement \`formatToIndianDate(dateStr)\` returning \`"DD/MM/YYYY"\`.
+3. **Log Summary**: Log message containing \`[DATE_UTILITIES_VERIFIED]\`.`,
+      starter_code: `/**
+ * Calculate the number of full days between two date strings (YYYY-MM-DD)
+ */
+function daysBetween(startDateStr, endDateStr) {
+  // TODO 1: Parse dates and calculate whole days difference
+  return 0;
+}
+
+/**
+ * Format date string (YYYY-MM-DD) into DD/MM/YYYY
+ */
+function formatToIndianDate(dateStr) {
+  // TODO 2: Return formatted string "DD/MM/YYYY"
+  return "";
+}
+
+// Sample test usage
+const sampleDays = daysBetween("2026-01-01", "2026-01-11");
+const formattedSample = formatToIndianDate("2026-08-15");
+
+// TODO 3: Print summary containing tag '[DATE_UTILITIES_VERIFIED]'
+console.log(\`[DATE_UTILITIES_VERIFIED] Days diff: \${sampleDays}, Formatted: \${formattedSample}\`);
+`,
+      tasks: [
+        {
+          id: 'task_days_between',
+          description: 'daysBetween("2026-01-01", "2026-01-11") returns 10',
+          validation_type: 'function_returns',
+          validation_config: {
+            function_name: 'daysBetween',
+            args: ['2026-01-01', '2026-01-11'],
+            expected: 10
+          }
+        },
+        {
+          id: 'task_format_date',
+          description: 'formatToIndianDate("2026-08-15") returns "15/08/2026"',
+          validation_type: 'function_returns',
+          validation_config: {
+            function_name: 'formatToIndianDate',
+            args: ['2026-08-15'],
+            expected: '15/08/2026'
+          }
+        },
+        {
+          id: 'task_date_log',
+          description: 'Console output contains "[DATE_UTILITIES_VERIFIED]"',
+          validation_type: 'console_output_contains',
+          validation_config: {
+            expected: '[DATE_UTILITIES_VERIFIED]'
+          }
+        }
+      ]
+    }
   }
 ];
 
