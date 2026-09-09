@@ -35,6 +35,8 @@ import { runPythonCode } from '../utils/pyodideRunner';
 import { validateAllTasks as validateAllPythonTasks } from '../utils/taskValidator';
 import { createDatabaseFromSchema, introspectDatabaseSchema, executeSqlQuery } from '../utils/sqlRunner';
 import { validateAllSqlTasks } from '../utils/sqlValidator';
+import { runJavaScriptCode } from '../utils/jsRunner';
+import { validateAllJsTasks } from '../utils/jsValidator';
 
 export default function LabRunner() {
   const { labId } = useParams();
@@ -286,6 +288,7 @@ export default function LabRunner() {
     setOutput('');
 
     const isSql = lab.type === 'sql_sandbox';
+    const isJs = lab.type === 'js_sandbox';
 
     if (isSql) {
       // ── SQL Execution ──────────────────────────────────────────────────────
@@ -309,6 +312,32 @@ export default function LabRunner() {
       } catch (err) {
         setErrorOutput(err.message || String(err));
         setRunnerStatus('Query error');
+      } finally {
+        setIsRunning(false);
+      }
+    } else if (isJs) {
+      // ── JavaScript Execution ────────────────────────────────────────────────
+      setRunnerStatus('Executing in JavaScript Sandbox...');
+      try {
+        const tasks = lab.config?.tasks || [];
+        const execResult = await runJavaScriptCode(code, tasks);
+
+        setOutput(execResult.stdout);
+        if (execResult.stderr) {
+          setErrorOutput(execResult.stderr);
+        }
+        if (execResult.error) {
+          setErrorOutput((prev) => (prev ? `${prev}\n${execResult.error}` : execResult.error));
+        }
+        setExecutionTime(execResult.executionTime);
+        setRunnerStatus(execResult.success ? 'Execution complete' : 'Execution failed');
+
+        // Validate JavaScript tasks
+        const validationResults = await validateAllJsTasks(tasks, execResult);
+        processValidationResults(tasks, validationResults);
+      } catch (err) {
+        setErrorOutput(`Runner error: ${err.message}`);
+        setRunnerStatus('Execution failed');
       } finally {
         setIsRunning(false);
       }
@@ -344,6 +373,7 @@ export default function LabRunner() {
       }
     }
   };
+
 
   // Process task validation results & check lab completion
   const processValidationResults = (tasks, validationResults) => {
@@ -476,6 +506,94 @@ export default function LabRunner() {
       } catch (e) {}
 
       recordAttemptCompletion(passedIds, 100);
+    } else if (isJs) {
+      let demoJs = '';
+      if (lab?.lab_id === 'lab-js-arrays') {
+        demoJs = `// Employee records dataset
+const employees = [
+  { id: 1, name: "Aarav Sharma", department: "Engineering", salary: 85000 },
+  { id: 2, name: "Priya Patel", department: "Finance", salary: 72000 },
+  { id: 3, name: "Rohan Verma", department: "Marketing", salary: 58000 },
+  { id: 4, name: "Ananya Iyer", department: "Finance", salary: 75000 },
+  { id: 5, name: "Vikram Singh", department: "Engineering", salary: 92000 },
+  { id: 6, name: "Neha Gupta", department: "Finance", salary: 68000 }
+];
+
+// 1. Filter to Finance department
+const financeEmployees = employees.filter(emp => emp.department === "Finance");
+
+// 2. Calculate total salary for Finance department
+const totalFinanceSalary = financeEmployees.reduce((sum, emp) => sum + emp.salary, 0);
+
+// 3. Sort employees by salary descending
+const sortedEmployees = [...employees].sort((a, b) => b.salary - a.salary);
+
+// 4. Log summary
+console.log(\`[PAYROLL_SUMMARY] Finance Total: ₹\${totalFinanceSalary}, Top Earner: \${sortedEmployees[0].name}\`);
+`;
+      } else if (lab?.lab_id === 'lab-js-strings') {
+        demoJs = `// Raw unformatted user feedback with extra whitespace and irregular casing
+const rawFeedback = "   EXCELLENT platform with Interactive virtual LABS and Helpful mentors!   ";
+
+// 1. Trim and lowercase
+const cleanedText = rawFeedback.trim().toLowerCase();
+
+// 2. Split into words
+const wordsArray = cleanedText.split(/\\s+/);
+
+// 3. Count words
+const wordCount = wordsArray.length;
+
+// 4. Helper function
+function hasKeyword(text, keyword) {
+  return text.toLowerCase().includes(keyword.toLowerCase());
+}
+
+// 5. Log summary
+console.log(\`[TEXT_PROCESSED_SUMMARY] Words counted: \${wordCount}\`);
+`;
+      } else {
+        demoJs = `// Simulated API service
+function mockFetchUsers() {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve([
+        { id: 101, username: "dev_karan", status: "active", points: 450 },
+        { id: 102, username: "sarah_m", status: "inactive", points: 120 },
+        { id: 103, username: "rahul_ai", status: "active", points: 890 },
+        { id: 104, username: "tanya_c", status: "active", points: 610 },
+        { id: 105, username: "amit_99", status: "pending", points: 50 }
+      ]);
+    }, 50);
+  });
+}
+
+let activeUsers = [];
+let activeUserCount = 0;
+let totalActivePoints = 0;
+
+async function loadAndProcessUsers() {
+  const all = await mockFetchUsers();
+  activeUsers = all.filter(u => u.status === 'active');
+  activeUserCount = activeUsers.length;
+  totalActivePoints = activeUsers.reduce((sum, u) => sum + u.points, 0);
+  return activeUsers;
+}
+
+await loadAndProcessUsers();
+console.log(\`[ASYNC_FETCH_COMPLETE] Active users: \${activeUserCount}, Total points: \${totalActivePoints}\`);
+`;
+      }
+
+      setCode(demoJs);
+      const tasks = lab?.config?.tasks || [];
+      const execResult = await runJavaScriptCode(demoJs, tasks);
+      setOutput(execResult.stdout);
+      setExecutionTime(execResult.executionTime);
+      setRunnerStatus('Execution complete');
+
+      const validationResults = await validateAllJsTasks(tasks, execResult);
+      processValidationResults(tasks, validationResults);
     } else {
       const demoCode = `# Official Data Cleansing Solution
 import pandas as pd
@@ -671,6 +789,7 @@ print(f"[CLEANED_DATASET_SUMMARY] Valid records: {valid_districts_count}, Avg Li
   }
 
   const isSql = lab?.type === 'sql_sandbox';
+  const isJs = lab?.type === 'js_sandbox';
   const userName = sessionData?.user_name || 'Learner';
   const courseId = sessionData?.course_id || lab?.course_id;
   const tasks = lab?.config?.tasks || [];
@@ -701,12 +820,12 @@ print(f"[CLEANED_DATASET_SUMMARY] Valid records: {valid_districts_count}, Avg Li
               fontWeight: 600,
               padding: '0.2rem 0.5rem',
               borderRadius: '9999px',
-              background: isSql ? '#ecfdf5' : '#f0fdf4',
-              color: isSql ? '#059669' : '#16a34a',
-              border: `1px solid ${isSql ? '#a7f3d0' : '#bbf7d0'}`
+              background: isSql ? '#ecfdf5' : isJs ? '#fefce8' : '#f0fdf4',
+              color: isSql ? '#059669' : isJs ? '#b45309' : '#16a34a',
+              border: `1px solid ${isSql ? '#a7f3d0' : isJs ? '#fde047' : '#bbf7d0'}`
             }}
           >
-            {isSql ? 'SQL SQLite' : 'Python 3.11'}
+            {isSql ? 'SQL SQLite' : isJs ? 'JavaScript (ES6+)' : 'Python 3.11'}
           </span>
         </div>
 
@@ -1048,7 +1167,7 @@ print(f"[CLEANED_DATASET_SUMMARY] Valid records: {valid_districts_count}, Avg Li
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-primary-800)' }}>
                   <Code2 size={16} />
-                  <span>{isSql ? 'Query Editor (SQLite WASM)' : 'Python Sandbox (Pyodide WASM)'}</span>
+                  <span>{isSql ? 'Query Editor (SQLite WASM)' : isJs ? 'JavaScript Editor (Browser Sandbox)' : 'Python Sandbox (Pyodide WASM)'}</span>
                 </div>
                 <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', background: '#f8fafc', padding: '0.1rem 0.4rem', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
                   {runnerStatus}
@@ -1083,11 +1202,13 @@ print(f"[CLEANED_DATASET_SUMMARY] Valid records: {valid_districts_count}, Avg Li
                     gap: '0.4rem',
                     background: isSql
                       ? 'linear-gradient(135deg, #059669 0%, #047857 100%)'
+                      : isJs
+                      ? 'linear-gradient(135deg, #d97706 0%, #b45309 100%)'
                       : 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)'
                   }}
                 >
                   <Play size={14} />
-                  {isRunning ? 'Running...' : isSql ? 'Execute Query' : 'Run Python Code'}
+                  {isRunning ? 'Running...' : isSql ? 'Execute Query' : isJs ? 'Run JavaScript' : 'Run Python Code'}
                 </button>
               </div>
             </div>
@@ -1106,7 +1227,7 @@ print(f"[CLEANED_DATASET_SUMMARY] Valid records: {valid_districts_count}, Avg Li
           >
             <Editor
               height="360px"
-              language={isSql ? 'sql' : 'python'}
+              language={isSql ? 'sql' : isJs ? 'javascript' : 'python'}
               value={code}
               onChange={(value) => setCode(value || '')}
               theme="vs-dark"

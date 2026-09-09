@@ -20,8 +20,10 @@ import { getServiceInfo, getLabsList } from '../services/api';
 const FILTERS = [
   { id: 'all', label: 'All Labs', icon: Layers },
   { id: 'python', label: 'Python', icon: Code2 },
-  { id: 'sql', label: 'SQL', icon: Database }
+  { id: 'sql', label: 'SQL', icon: Database },
+  { id: 'javascript', label: 'JavaScript', icon: Code2 }
 ];
+
 
 export default function LabsHome() {
   const [labs, setLabs] = useState([]);
@@ -57,8 +59,10 @@ export default function LabsHome() {
   const filteredLabs = labs.filter((lab) => {
     if (activeFilter === 'python') return lab.type === 'python_sandbox';
     if (activeFilter === 'sql') return lab.type === 'sql_sandbox';
+    if (activeFilter === 'javascript') return lab.type === 'js_sandbox';
     return true;
   });
+
 
   const pythonCount = labs.filter((l) => l.type === 'python_sandbox').length;
   const sqlCount = labs.filter((l) => l.type === 'sql_sandbox').length;
@@ -419,12 +423,14 @@ export default function LabsHome() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 'var(--space-5)' }}>
             {filteredLabs.map((lab) => {
               const isSql = lab.type === 'sql_sandbox';
+              const isJs = lab.type === 'js_sandbox';
               const Icon = isSql ? Database : Code2;
-              const typeLabel = isSql ? 'SQL (SQLite WebAssembly)' : 'Python 3.11 (Pyodide)';
-              const badgeColor = isSql ? '#ecfdf5' : '#f0f9ff';
-              const badgeBorder = isSql ? '#a7f3d0' : '#bae6fd';
-              const badgeText = isSql ? '#065f46' : '#0c4a6e';
-              const iconColor = isSql ? '#059669' : '#0284c7';
+              const typeLabel = isSql ? 'SQL (SQLite WebAssembly)' : isJs ? 'JavaScript (Browser Sandbox)' : 'Python 3.11 (Pyodide)';
+              const badgeColor = isSql ? '#ecfdf5' : isJs ? '#fefce8' : '#f0f9ff';
+              const badgeBorder = isSql ? '#a7f3d0' : isJs ? '#fde047' : '#bae6fd';
+              const badgeText = isSql ? '#065f46' : isJs ? '#b45309' : '#0c4a6e';
+              const iconColor = isSql ? '#059669' : isJs ? '#d97706' : '#0284c7';
+
 
               return (
                 <div
