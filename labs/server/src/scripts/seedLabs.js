@@ -676,6 +676,392 @@ console.log(\`[DATE_UTILITIES_VERIFIED] Days diff: \${sampleDays}, Formatted: \$
         }
       ]
     }
+  },
+  {
+    lab_id: 'lab-html-profile-card',
+    title: 'Digital Identity: Structure & Style an Official Profile Card',
+    description: 'Create a structured digital employee identity card using semantic HTML elements and clean CSS box model styling.',
+    type: 'html_css_sandbox',
+    course_title: 'Digital Documentation & Web Fundamentals',
+    competency_tags: ['Digital Documentation', 'HTML & Web Standards', 'CSS Styling', 'Basic Document Handling', 'IT & Digital Skills'],
+    is_active: true,
+    config: {
+      instructions: `### Lab Objective: Structure and Style a Personnel Profile Card
+
+In digital documentation and government e-office platforms, official employee identification cards require semantic structure and clean, consistent visual styling.
+
+#### Tasks:
+1. **Official Name Header**: Inside \`.profile-card\`, add an \`<h2>\` element containing the name **Ananya Sharma**.
+2. **Designation Paragraph**: Add a \`<p>\` element with class \`designation\` containing **Senior Statistical Officer**.
+3. **Card Border**: Update the \`.profile-card\` rule in CSS so its \`border-style\` is \`solid\`.
+4. **Flexbox Alignment**: Set \`.profile-card\` CSS \`display\` property to \`flex\`.`,
+      starter_html: `<div class="card-container">
+  <div class="profile-card">
+    <div class="avatar-badge">AO</div>
+    <!-- TODO 1: Add an <h2> element with the employee's full name: "Ananya Sharma" -->
+    
+    <!-- TODO 2: Add a <p class="designation"> element with designation: "Senior Statistical Officer" -->
+    
+    <div class="meta-section">
+      <span class="badge">Ministry of Statistics</span>
+      <span class="badge">Employee ID: #ST-8821</span>
+    </div>
+  </div>
+</div>`,
+      starter_css: `body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background-color: #f1f5f9;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  margin: 0;
+}
+
+.profile-card {
+  width: 320px;
+  background-color: #ffffff;
+  padding: 24px;
+  border-radius: 12px;
+  text-align: center;
+  /* TODO 3: Set border-style to "solid" with a 2px border width */
+  border: 2px dashed #cbd5e1;
+  /* TODO 4: Configure display to "flex" and flex-direction to "column" */
+  display: block;
+  align-items: center;
+}
+
+.avatar-badge {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.badge {
+  display: inline-block;
+  background-color: #e0f2fe;
+  color: #0369a1;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  margin: 4px;
+}`,
+      tasks: [
+        {
+          id: 'task_profile_h2',
+          description: 'Add an <h2> element inside .profile-card for the employee name',
+          validation_type: 'element_exists',
+          validation_config: {
+            selector: '.profile-card h2'
+          }
+        },
+        {
+          id: 'task_profile_p',
+          description: 'Add a <p> or <p class="designation"> element for the employee title',
+          validation_type: 'element_exists',
+          validation_config: {
+            selector: '.profile-card p'
+          }
+        },
+        {
+          id: 'task_profile_border',
+          description: 'Set .profile-card border-style to "solid"',
+          validation_type: 'css_property_equals',
+          validation_config: {
+            selector: '.profile-card',
+            property: 'border-style',
+            expected_value: 'solid'
+          }
+        },
+        {
+          id: 'task_profile_display',
+          description: 'Set .profile-card display property to "flex"',
+          validation_type: 'css_property_equals',
+          validation_config: {
+            selector: '.profile-card',
+            property: 'display',
+            expected_value: 'flex'
+          }
+        }
+      ]
+    }
+  },
+  {
+    lab_id: 'lab-html-broken-layout',
+    title: 'Layout Diagnostics: Fix Responsive Multi-Column Alignment',
+    description: 'Diagnose and repair a broken multi-column report layout using CSS Flexbox, box-sizing, and responsive spacing.',
+    type: 'html_css_sandbox',
+    course_title: 'Digital Documentation & Web Fundamentals',
+    competency_tags: ['Digital Documentation', 'CSS Layouts', 'Responsive Design', 'IT & Digital Skills'],
+    is_active: true,
+    config: {
+      instructions: `### Lab Objective: Layout Diagnostics & Alignment
+
+In official data portals and administrative dashboards, reports must present metrics side-by-side in balanced multi-column containers. Currently, the dashboard container is stacking columns vertically.
+
+#### Tasks:
+1. **Enable Flexbox Layout**: In \`.container\`, change the \`display\` property from \`block\` to \`flex\` so columns align side-by-side.
+2. **Apply Box Sizing**: In \`.metric-card\`, set \`box-sizing\` to \`border-box\` so padding and borders do not cause overflow.
+3. **Verify Column Count**: Ensure both metric columns remain inside \`.container\` (exact count of 2 child cards).`,
+      starter_html: `<div class="report-wrapper">
+  <header class="report-header">
+    <h1>District Quarterly Performance Metrics</h1>
+    <p>Official monitoring overview for administrative divisions</p>
+  </header>
+
+  <!-- Notice the columns are currently stacking vertically instead of side-by-side -->
+  <div class="container">
+    <div class="metric-card column-left">
+      <h3>Revenue Collection</h3>
+      <p class="number">₹ 42.8 Cr</p>
+      <span class="status positive">+12.4% vs Target</span>
+    </div>
+    <div class="metric-card column-right">
+      <h3>Public Grievances Resolved</h3>
+      <p class="number">98.2%</p>
+      <span class="status positive">3,420 Cases Closed</span>
+    </div>
+  </div>
+</div>`,
+      starter_css: `body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background-color: #f8fafc;
+  color: #1e293b;
+  padding: 30px;
+  margin: 0;
+}
+
+.report-wrapper {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.report-header {
+  margin-bottom: 24px;
+}
+
+/* FIX REQUIRED: The container currently stacks columns vertically. 
+   TODO 1: Change display from 'block' to 'flex' so child columns sit side-by-side. */
+.container {
+  display: block; /* Change this to flex */
+  gap: 20px;
+}
+
+/* FIX REQUIRED: 
+   TODO 2: Set box-sizing to 'border-box' so padding doesn't overflow the columns. */
+.metric-card {
+  box-sizing: content-box; /* Change this to border-box */
+  flex: 1;
+  background: #ffffff;
+  padding: 24px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.number {
+  font-size: 28px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 8px 0;
+}
+
+.status.positive {
+  color: #16a34a;
+  font-size: 13px;
+  font-weight: 600;
+}`,
+      tasks: [
+        {
+          id: 'task_container_flex',
+          description: 'Set .container display property to "flex"',
+          validation_type: 'css_property_equals',
+          validation_config: {
+            selector: '.container',
+            property: 'display',
+            expected_value: 'flex'
+          }
+        },
+        {
+          id: 'task_metric_box_sizing',
+          description: 'Set .metric-card box-sizing to "border-box"',
+          validation_type: 'css_property_equals',
+          validation_config: {
+            selector: '.metric-card',
+            property: 'box-sizing',
+            expected_value: 'border-box'
+          }
+        },
+        {
+          id: 'task_columns_count',
+          description: 'Ensure .container contains exactly 2 .metric-card elements',
+          validation_type: 'element_count_equals',
+          validation_config: {
+            selector: '.container .metric-card',
+            count: 2
+          }
+        }
+      ]
+    }
+  },
+  {
+    lab_id: 'lab-html-citizen-form',
+    title: 'Citizen Services: Semantic Portal Application Form',
+    description: 'Construct an accessible, semantic citizen service application form with descriptive labels and official government portal styling.',
+    type: 'html_css_sandbox',
+    course_title: 'Government Digital Platforms & Citizen Services',
+    competency_tags: ['Digital Documentation', 'Government Digital Platforms', 'Form Accessibility', 'Basic Document Handling'],
+    is_active: true,
+    config: {
+      instructions: `### Lab Objective: Accessible Citizen Services Form
+
+Government digital platforms require accessible, clear semantic form structures with matching descriptive labels and clean action controls.
+
+#### Tasks:
+1. **Applicant Name Label**: Add a \`<label for="applicant_name">\` element inside \`.portal-form\` for the applicant name input.
+2. **District Label**: Add a \`<label for="district">\` element inside \`.portal-form\` for the district input (verifying at least 2 \`<label>\` tags exist).
+3. **Action Button Pointer**: In CSS, update \`.submit-btn\` so its \`cursor\` property is \`pointer\`.
+4. **Action Confirmation**: Ensure the \`.submit-btn\` displays text containing **Submit**.`,
+      starter_html: `<div class="portal-container">
+  <header class="portal-header">
+    <div class="emblem-tag">National e-District Portal</div>
+    <h1>Application for Certificate of Domicile</h1>
+    <p class="subtitle">Please provide accurate applicant details as per official government records.</p>
+  </header>
+
+  <form class="portal-form">
+    <div class="form-group">
+      <!-- TODO 1: Add a <label for="applicant_name">Full Name of Applicant</label> -->
+      
+      <input type="text" id="applicant_name" placeholder="Enter full name" />
+    </div>
+
+    <div class="form-group">
+      <!-- TODO 2: Add a <label for="district">District of Residence</label> -->
+      
+      <input type="text" id="district" placeholder="e.g. Varanasi, Lucknow" />
+    </div>
+
+    <!-- TODO 3 & 4: Style the submit button and ensure it contains the text "Submit Application" -->
+    <button type="button" class="submit-btn">Submit Application</button>
+  </form>
+</div>`,
+      starter_css: `body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background-color: #f0f4f8;
+  color: #1e293b;
+  padding: 40px 20px;
+  margin: 0;
+}
+
+.portal-container {
+  max-width: 520px;
+  margin: 0 auto;
+  background: #ffffff;
+  padding: 32px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border-top: 5px solid #1e40af;
+}
+
+.emblem-tag {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  color: #1e40af;
+  margin-bottom: 6px;
+}
+
+h1 {
+  font-size: 20px;
+  margin: 0 0 6px 0;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0 0 24px 0;
+}
+
+.form-group {
+  margin-bottom: 18px;
+}
+
+/* Accessible form labels */
+.portal-form label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 6px;
+}
+
+.portal-form input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+/* TODO 3: Ensure button has cursor: pointer and prominent government action styling */
+.submit-btn {
+  width: 100%;
+  padding: 12px;
+  background-color: #1e40af;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  /* Set cursor to pointer */
+  cursor: default; /* Change to pointer */
+  transition: background-color 0.2s;
+}
+
+.submit-btn:hover {
+  background-color: #1d4ed8;
+}`,
+      tasks: [
+        {
+          id: 'task_form_labels',
+          description: 'Add descriptive <label> elements for each input (count equals 2)',
+          validation_type: 'element_count_equals',
+          validation_config: {
+            selector: '.portal-form label',
+            count: 2
+          }
+        },
+        {
+          id: 'task_button_cursor',
+          description: 'Set .submit-btn cursor property to "pointer"',
+          validation_type: 'css_property_equals',
+          validation_config: {
+            selector: '.submit-btn',
+            property: 'cursor',
+            expected_value: 'pointer'
+          }
+        },
+        {
+          id: 'task_button_text',
+          description: 'Ensure .submit-btn text contains "Submit"',
+          validation_type: 'text_content_contains',
+          validation_config: {
+            selector: '.submit-btn',
+            expected_substring: 'Submit'
+          }
+        }
+      ]
+    }
   }
 ];
 
