@@ -276,6 +276,255 @@ Learn to compute district-level aggregates per administrative division.
         }
       ]
     }
+  },
+  {
+    lab_id: 'lab-js-arrays',
+    title: 'Array Manipulation: Filtering, Reduction & Sorting',
+    description: 'Process employee records using modern JavaScript array methods: filter by department, calculate total payroll with reduce, and sort by compensation.',
+    type: 'js_sandbox',
+    course_title: 'Modern JavaScript & Web Application Development',
+    competency_tags: ['JavaScript Basics', 'Data Analysis', 'Array Methods', 'IT & Digital Skills'],
+    is_active: true,
+    config: {
+      instructions: `### Lab Objective: JavaScript Array Manipulation
+Learn to process and transform structured collections of objects using standard JavaScript array methods (\`filter\`, \`reduce\`, and \`sort\`).
+
+#### Tasks:
+1. **Filter by Department**: Filter the \`employees\` array to include only records where \`department === "Finance"\`. Store the result in \`financeEmployees\`.
+2. **Compute Total Salary**: Calculate the combined salary of all \`financeEmployees\` using \`.reduce()\`. Store the number in \`totalFinanceSalary\`.
+3. **Sort by Salary**: Create a copy of the \`employees\` array sorted in descending order of salary (highest first). Store the result in \`sortedEmployees\`.
+4. **Log Payroll Summary**: Output a summary containing \`[PAYROLL_SUMMARY]\` via \`console.log\`.`,
+      starter_code: `// Employee records dataset
+const employees = [
+  { id: 1, name: "Aarav Sharma", department: "Engineering", salary: 85000 },
+  { id: 2, name: "Priya Patel", department: "Finance", salary: 72000 },
+  { id: 3, name: "Rohan Verma", department: "Marketing", salary: 58000 },
+  { id: 4, name: "Ananya Iyer", department: "Finance", salary: 75000 },
+  { id: 5, name: "Vikram Singh", department: "Engineering", salary: 92000 },
+  { id: 6, name: "Neha Gupta", department: "Finance", salary: 68000 }
+];
+
+// TODO 1: Filter employees array to keep only those where department === "Finance"
+const financeEmployees = []; // replace with employees.filter(...)
+
+// TODO 2: Calculate the total salary of all financeEmployees using .reduce()
+const totalFinanceSalary = 0; // replace with financeEmployees.reduce(...)
+
+// TODO 3: Sort a copy of the employees array by salary descending (highest first)
+const sortedEmployees = []; // replace with [...employees].sort(...)
+
+// TODO 4: Print summary with the tag '[PAYROLL_SUMMARY]'
+console.log(\`[PAYROLL_SUMMARY] Records processed: \${employees.length}\`);
+`,
+      tasks: [
+        {
+          id: 'task_filter_finance',
+          description: 'Filter to Finance department: financeEmployees has 3 records',
+          validation_type: 'variable_equals',
+          validation_config: {
+            variable: 'financeEmployees.length',
+            expected: 3
+          }
+        },
+        {
+          id: 'task_total_payroll',
+          description: 'Calculate total Finance payroll: totalFinanceSalary equals 215000',
+          validation_type: 'variable_equals',
+          validation_config: {
+            variable: 'totalFinanceSalary',
+            expected: 215000
+          }
+        },
+        {
+          id: 'task_sorted_top',
+          description: 'Sort descending: highest earner is "Vikram Singh"',
+          validation_type: 'variable_equals',
+          validation_config: {
+            variable: 'sortedEmployees[0].name',
+            expected: 'Vikram Singh'
+          }
+        },
+        {
+          id: 'task_log_summary',
+          description: 'Log payroll summary report containing "[PAYROLL_SUMMARY]"',
+          validation_type: 'console_output_contains',
+          validation_config: {
+            expected: '[PAYROLL_SUMMARY]'
+          }
+        }
+      ]
+    }
+  },
+  {
+    lab_id: 'lab-js-strings',
+    title: 'String Processing & Text Normalization',
+    description: 'Clean noisy user feedback, normalize casing, tokenize sentences into word arrays, and count word frequencies.',
+    type: 'js_sandbox',
+    course_title: 'Modern JavaScript & Web Application Development',
+    competency_tags: ['JavaScript Basics', 'Text Processing', 'IT & Digital Skills', 'String Manipulation'],
+    is_active: true,
+    config: {
+      instructions: `### Lab Objective: Text Cleaning & Normalization
+Practice cleaning unformatted text input using JavaScript string manipulation methods (\`trim\`, \`toLowerCase\`, and \`split\`).
+
+#### Tasks:
+1. **Normalize Text**: Trim leading/trailing whitespace and convert \`rawFeedback\` to lowercase. Store the string in \`cleanedText\`.
+2. **Tokenize Words**: Split \`cleanedText\` by spaces into an array of words stored in \`wordsArray\`.
+3. **Word Count**: Calculate the length of \`wordsArray\` and assign it to \`wordCount\`.
+4. **Keyword Detection**: Implement \`hasKeyword(text, keyword)\` returning true if the keyword exists in the text.
+5. **Log Processing Summary**: Print a report containing \`[TEXT_PROCESSED_SUMMARY]\` via \`console.log\`.`,
+      starter_code: `// Raw unformatted user feedback with extra whitespace and irregular casing
+const rawFeedback = "   EXCELLENT platform with Interactive virtual LABS and Helpful mentors!   ";
+
+// TODO 1: Trim leading/trailing whitespace and convert rawFeedback to lowercase
+const cleanedText = ""; // replace with rawFeedback.trim().toLowerCase()
+
+// TODO 2: Split cleanedText into an array of words (separated by space)
+const wordsArray = []; // replace with cleanedText.split(/\\s+/)
+
+// TODO 3: Count the total number of words in wordsArray
+const wordCount = 0; // replace with wordsArray.length
+
+// TODO 4: Write a helper function 'hasKeyword(text, keyword)' that returns true if text contains keyword (case-insensitive)
+function hasKeyword(text, keyword) {
+  // return boolean
+  return false;
+}
+
+// TODO 5: Log processing summary report
+console.log(\`[TEXT_PROCESSED_SUMMARY] Words counted: \${wordCount}\`);
+`,
+      tasks: [
+        {
+          id: 'task_clean_text',
+          description: 'Trim and lowercase feedback: cleanedText starts with "excellent"',
+          validation_type: 'variable_equals',
+          validation_config: {
+            variable: 'cleanedText',
+            expected: 'excellent platform with interactive virtual labs and helpful mentors!'
+          }
+        },
+        {
+          id: 'task_word_count',
+          description: 'Count words in tokenized array: wordCount equals 9',
+          validation_type: 'variable_equals',
+          validation_config: {
+            variable: 'wordCount',
+            expected: 9
+          }
+        },
+        {
+          id: 'task_function_keyword',
+          description: 'hasKeyword("virtual labs", "labs") returns true',
+          validation_type: 'function_returns',
+          validation_config: {
+            function_name: 'hasKeyword',
+            args: ['virtual labs', 'labs'],
+            expected: true
+          }
+        },
+        {
+          id: 'task_log_text_summary',
+          description: 'Log text processing summary containing "[TEXT_PROCESSED_SUMMARY]"',
+          validation_type: 'console_output_contains',
+          validation_config: {
+            expected: '[TEXT_PROCESSED_SUMMARY]'
+          }
+        }
+      ]
+    }
+  },
+  {
+    lab_id: 'lab-js-async-fetch',
+    title: 'Async JavaScript: Simulated API & Promise Handling',
+    description: 'Consume simulated asynchronous REST API endpoints using async/await, handle promises, and aggregate active user statistics.',
+    type: 'js_sandbox',
+    course_title: 'Modern JavaScript & Web Application Development',
+    competency_tags: ['JavaScript Basics', 'Async JavaScript', 'API Integration', 'IT & Digital Skills'],
+    is_active: true,
+    config: {
+      instructions: `### Lab Objective: Asynchronous JavaScript & Promises
+Learn how to work with asynchronous data using \`async\` and \`await\` to consume simulated REST API responses.
+
+#### Tasks:
+1. **Fetch & Filter Data**: In \`loadAndProcessUsers\`, await \`mockFetchUsers()\`, filter records where \`status === "active"\`, and return the array.
+2. **Active User Count**: Assign the count of active users to \`activeUserCount\` (expected: 3).
+3. **Aggregate Points**: Compute the sum of \`points\` across active users and store in \`totalActivePoints\` (expected: 1950).
+4. **Log Summary**: Log completion line containing \`[ASYNC_FETCH_COMPLETE]\`.`,
+      starter_code: `// Simulated API service (network delay simulated with Promise)
+function mockFetchUsers() {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve([
+        { id: 101, username: "dev_karan", status: "active", points: 450 },
+        { id: 102, username: "sarah_m", status: "inactive", points: 120 },
+        { id: 103, username: "rahul_ai", status: "active", points: 890 },
+        { id: 104, username: "tanya_c", status: "active", points: 610 },
+        { id: 105, username: "amit_99", status: "pending", points: 50 }
+      ]);
+    }, 50);
+  });
+}
+
+// Global variables to populate
+let activeUsers = [];
+let activeUserCount = 0;
+let totalActivePoints = 0;
+
+// TODO 1: Implement an async function to fetch users and filter active accounts
+async function loadAndProcessUsers() {
+  // 1. Await mockFetchUsers()
+  // 2. Filter records where status === 'active' -> assign to activeUsers
+  // 3. Set activeUserCount = activeUsers.length
+  // 4. Calculate sum of points for active users -> assign to totalActivePoints
+  // 5. Return activeUsers
+  return [];
+}
+
+// Call the function
+loadAndProcessUsers().then(() => {
+  console.log(\`[ASYNC_FETCH_COMPLETE] Active users: \${activeUserCount}, Total points: \${totalActivePoints}\`);
+});
+`,
+      tasks: [
+        {
+          id: 'task_async_fetch',
+          description: 'loadAndProcessUsers returns array of 3 active users',
+          validation_type: 'function_returns',
+          validation_config: {
+            function_name: 'loadAndProcessUsers',
+            is_async: true,
+            expected_length: 3
+          }
+        },
+        {
+          id: 'task_active_count',
+          description: 'activeUserCount equals 3',
+          validation_type: 'variable_equals',
+          validation_config: {
+            variable: 'activeUserCount',
+            expected: 3
+          }
+        },
+        {
+          id: 'task_total_points',
+          description: 'totalActivePoints equals 1950 (450 + 890 + 610)',
+          validation_type: 'variable_equals',
+          validation_config: {
+            variable: 'totalActivePoints',
+            expected: 1950
+          }
+        },
+        {
+          id: 'task_log_async_summary',
+          description: 'Log summary containing "[ASYNC_FETCH_COMPLETE]"',
+          validation_type: 'console_output_contains',
+          validation_config: {
+            expected: '[ASYNC_FETCH_COMPLETE]'
+          }
+        }
+      ]
+    }
   }
 ];
 

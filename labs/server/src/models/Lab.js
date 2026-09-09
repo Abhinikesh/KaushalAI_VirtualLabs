@@ -42,7 +42,7 @@ const labSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['python_sandbox', 'sql_sandbox'],
+    enum: ['python_sandbox', 'sql_sandbox', 'js_sandbox'],
     required: true
   },
   course_title: {
