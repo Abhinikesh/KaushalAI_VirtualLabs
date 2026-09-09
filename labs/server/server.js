@@ -8,6 +8,7 @@ const healthRoutes = require('./src/routes/health.routes');
 const indexRoutes = require('./src/routes/index.routes');
 const sessionRoutes = require('./src/routes/session.routes');
 const labsRoutes = require('./src/routes/labs.routes');
+const adminRoutes = require('./src/routes/admin.routes');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -26,6 +27,7 @@ app.use('/', indexRoutes);
 app.use('/', healthRoutes);
 app.use('/api/lab-session', sessionRoutes);
 app.use('/api', labsRoutes);
+app.use('/api/admin', adminRoutes);
 
 // 404 Handler
 app.use((req, res) => {

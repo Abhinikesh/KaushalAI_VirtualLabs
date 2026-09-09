@@ -112,16 +112,66 @@ async function startLabAttempt(req, res, next) {
 }
 
 /**
+ * Dispatches server-to-server completion webhook back to the main KaushalAI backend.
+ * Protected with X-Labs-Webhook-Secret.
+ * Non-blocking: logs details on failure so learner response is never delayed or failed.
+ */
+async function dispatchMainAppWebhook({ user_id, lab_id, course_context, score, completed_at }) {
+  const webhookSecret = process.env.LABS_WEBHOOK_SECRET;
+  const rawApiUrl = process.env.MAIN_APP_API_URL || 'http://localhost:5000';
+  const baseUrl = rawApiUrl.replace(/\/+$/, '').replace(/\/api$/, '');
+  const webhookUrl = `${baseUrl}/api/labs/webhook/completion`;
+
+  if (!webhookSecret) {
+    console.warn('[Labs Webhook] LABS_WEBHOOK_SECRET is not configured in environment. Webhook notification skipped.');
+    return;
+  }
+
+  const payload = {
+    user_id: String(user_id),
+    lab_id: String(lab_id),
+    course_context: course_context ? String(course_context) : '',
+    score: typeof score === 'number' ? score : 100,
+    completed_at: completed_at ? new Date(completed_at).toISOString() : new Date().toISOString()
+  };
+
+  try {
+    console.log(`[Labs Webhook] Dispatching completion to ${webhookUrl} for user: ${payload.user_id}, lab: ${payload.lab_id}`);
+
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Labs-Webhook-Secret': webhookSecret
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const errText = await response.text().catch(() => '');
+      console.warn(`[Labs Webhook Warning] Main app returned HTTP ${response.status} for user ${payload.user_id}, lab ${payload.lab_id}: ${errText}`);
+    } else {
+      const resData = await response.json().catch(() => ({}));
+      console.log(`[Labs Webhook Success] Main platform acknowledged completion for user ${payload.user_id}, lab ${payload.lab_id}:`, resData);
+    }
+  } catch (err) {
+    // Non-blocking: log full details for manual reconciliation
+    console.error(`[Labs Webhook Failure] Could not connect to main app at ${webhookUrl}. Details: user_id=${payload.user_id}, lab_id=${payload.lab_id}, timestamp=${payload.completed_at}, error=${err.message}`);
+  }
+}
+
+/**
  * POST /api/lab-attempts/:attemptId/complete
  * Protected by verifyLabAccess.
  * Verifies the attempt belongs to req.labAccess.user_id.
  * Accepts: { final_code, tasks_completed, score }.
  * Updates status: 'completed', completed_at: now, plus submitted fields.
+ * Triggers server-to-server webhook dispatch to main platform.
  */
 async function completeLabAttempt(req, res, next) {
   try {
     const { attemptId } = req.params;
-    const { user_id } = req.labAccess;
+    const { user_id, course_context } = req.labAccess;
     const { final_code, tasks_completed, score } = req.body;
 
     const attempt = await LabAttempt.findById(attemptId);
@@ -154,8 +204,16 @@ async function completeLabAttempt(req, res, next) {
 
     await attempt.save();
 
-    // TODO: Part 4 will trigger webhook call back to the main site here
-    // notifyMainAppLabCompletion({ user_id: attempt.user_id, lab_id: attempt.lab_id, ... })
+    // Trigger completion webhook to main platform (asynchronously, non-blocking)
+    dispatchMainAppWebhook({
+      user_id: attempt.user_id,
+      lab_id: attempt.lab_id,
+      course_context: course_context || attempt.course_context || '',
+      score: attempt.score,
+      completed_at: attempt.completed_at
+    }).catch((dispatchErr) => {
+      console.error('[Labs Webhook] Error in async webhook dispatch:', dispatchErr.message);
+    });
 
     res.status(200).json({
       status: 'ok',
@@ -170,5 +228,6 @@ module.exports = {
   getLabsList,
   getLabById,
   startLabAttempt,
-  completeLabAttempt
+  completeLabAttempt,
+  dispatchMainAppWebhook
 };
