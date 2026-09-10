@@ -1062,6 +1062,200 @@ h1 {
         }
       ]
     }
+  },
+  {
+    lab_id: 'lab-sheet-payroll-formulas',
+    title: 'Official Payroll Computations: Calculate Compensation with Excel Formulas',
+    description: 'Calculate total compensation for administrative staff by entering row addition formulas, department totals with SUM, and benchmark averages using AVERAGE.',
+    type: 'spreadsheet_sandbox',
+    course_title: 'Official Statistical Computing & Survey Analysis',
+    competency_tags: ['Data Analysis', 'Spreadsheet Formulas', 'Digital Documentation'],
+    is_active: true,
+    config: {
+      column_headers: ['Employee ID', 'Staff Name', 'Department', 'Base Salary (₹)', 'DA Allowance (₹)', 'Total Compensation (₹)'],
+      initial_data: [
+        ['EMP-101', 'Aarav Sharma', 'Planning', 45000, 9000, null],
+        ['EMP-102', 'Priya Verma', 'Statistics', 52000, 10400, null],
+        ['EMP-103', 'Kavita Rao', 'Administration', 38000, 7600, null],
+        ['EMP-104', 'Vikram Sen', 'Field Survey', 41000, 8200, null],
+        ['EMP-105', 'Neha Gupta', 'IT Services', 49000, 9800, null],
+        ['Total', '', '', null, null, null],
+        ['Average', '', '', null, null, '']
+      ],
+      instructions: `### Lab Objective: Payroll Computations with Spreadsheet Formulas
+
+In government administrative offices, personnel compensation records must be accurately audited and aggregated using standard spreadsheet formulas. In this lab, you will use arithmetic expressions and aggregation functions to compute staff totals.
+
+#### Grid Coordinates & Cell References:
+- **Row 1** corresponds to Aarav Sharma (\`A1:F1\`).
+- **Column D** is Base Salary (\`D1:D5\`).
+- **Column E** is DA Allowance (\`E1:E5\`).
+- **Column F** is Total Compensation (\`F1:F5\`).
+
+#### Instructions:
+1. **Compute Row Totals**: For each staff member (Rows 1 to 5), enter a formula in Column F to calculate Total Compensation. You can use addition \`=D1+E1\` through \`=D5+E5\`, or \`=SUM(D1:E1)\`.
+2. **Compute Department Grand Total**: In cell **F6** (the Total row), enter \`=SUM(F1:F5)\` to compute total department disbursement.
+3. **Compute Average Base Salary**: In cell **D7** (the Average row), enter \`=AVERAGE(D1:D5)\` to calculate the benchmark mean base pay.`,
+      tasks: [
+        {
+          id: 'task_row_totals',
+          description: 'Calculate Total Compensation for all 5 staff members (Column F)',
+          validation_type: 'column_values_match',
+          validation_config: {
+            col: 5,
+            expected_values: [54000, 62400, 45600, 49200, 58800]
+          }
+        },
+        {
+          id: 'task_grand_total',
+          description: 'Calculate Grand Total in cell F6 using =SUM(F1:F5) (Expected: 270,000)',
+          validation_type: 'cell_value_equals',
+          validation_config: {
+            row: 5,
+            col: 5,
+            expected_value: 270000
+          }
+        },
+        {
+          id: 'task_average_base',
+          description: 'Calculate Average Base Salary in cell D7 using =AVERAGE(D1:D5) (Expected: 45,000)',
+          validation_type: 'cell_value_equals',
+          validation_config: {
+            row: 6,
+            col: 3,
+            expected_value: 45000
+          }
+        },
+        {
+          id: 'task_formula_check',
+          description: 'Ensure cell F6 utilizes a spreadsheet formula (starts with "=")',
+          validation_type: 'formula_used',
+          validation_config: {
+            row: 5,
+            col: 5
+          }
+        }
+      ]
+    }
+  },
+  {
+    lab_id: 'lab-sheet-data-cleanup',
+    title: 'Administrative Registry Cleaning: Deduplication & Text Normalization',
+    description: 'Clean raw citizen portal registration records by identifying duplicate entries, removing redundant rows, and normalizing inconsistent department text casing.',
+    type: 'spreadsheet_sandbox',
+    course_title: 'e-Governance & Citizen Portal Management',
+    competency_tags: ['Data Analysis', 'Data Cleaning', 'Administrative Records'],
+    is_active: true,
+    config: {
+      column_headers: ['Application No', 'Applicant Name', 'District', 'Category', 'Status'],
+      initial_data: [
+        ['APP-2024-001', 'Sunil Yadav', 'Varanasi', 'OBC', 'Verified'],
+        ['APP-2024-002', 'Pooja Mishra', 'lucknow', 'General', 'Pending'],
+        ['APP-2024-003', 'Ramesh Kumar', 'KANPUR', 'SC', 'Verified'],
+        ['APP-2024-001', 'Sunil Yadav', 'Varanasi', 'OBC', 'Verified'],
+        ['APP-2024-004', 'Anjali Singh', 'Prayagraj', 'General', 'Verified'],
+        ['APP-2024-005', 'Mohd Tariq', 'LUCKNOW', 'General', 'Pending']
+      ],
+      instructions: `### Lab Objective: Administrative Registry Deduplication & Normalization
+
+Citizen welfare registries often ingest raw entries with casing discrepancies and duplicate submissions. In this lab, you will audit the grid and standardize registry values.
+
+#### Instructions:
+1. **Remove Duplicate Record**: Identify the duplicate submission for \`APP-2024-001\` on Row 4 and remove or clear the duplicate values.
+2. **Standardize District Casing**: Standardize inconsistent text in Column C (District). Change \`lucknow\` and \`LUCKNOW\` to proper title case \`Lucknow\`, and change \`KANPUR\` to \`Kanpur\`.
+3. **Verify Distinct Districts**: Verify that all remaining non-empty districts follow consistent title casing.`,
+      tasks: [
+        {
+          id: 'task_deduplicate',
+          description: 'Remove duplicate registration APP-2024-001 from Row 4',
+          validation_type: 'cell_value_not_equals',
+          validation_config: {
+            row: 3,
+            col: 0,
+            disallowed_value: 'APP-2024-001'
+          }
+        },
+        {
+          id: 'task_casing_lucknow',
+          description: 'Standardize Row 2 District from "lucknow" to "Lucknow"',
+          validation_type: 'cell_value_equals',
+          validation_config: {
+            row: 1,
+            col: 2,
+            expected_value: 'Lucknow'
+          }
+        },
+        {
+          id: 'task_casing_kanpur',
+          description: 'Standardize Row 3 District from "KANPUR" to "Kanpur"',
+          validation_type: 'cell_value_equals',
+          validation_config: {
+            row: 2,
+            col: 2,
+            expected_value: 'Kanpur'
+          }
+        }
+      ]
+    }
+  },
+  {
+    lab_id: 'lab-sheet-scheme-aggregations',
+    title: 'Public Welfare Scheme: Regional Budget Aggregation & Performance',
+    description: 'Analyze multi-district DBT disbursement quotas, evaluate target completion rates using percentage formulas, and calculate regional summaries.',
+    type: 'spreadsheet_sandbox',
+    course_title: 'Public Finance & District Resource Management',
+    competency_tags: ['Data Analysis', 'Public Finance', 'Data Visualization'],
+    is_active: true,
+    config: {
+      column_headers: ['District Code', 'District Name', 'Target Allocation (₹ Cr)', 'Actual Disbursed (₹ Cr)', 'Utilization Rate (%)'],
+      initial_data: [
+        ['DIST-01', 'Agra', 120, 108, null],
+        ['DIST-02', 'Meerut', 95, 90.25, null],
+        ['DIST-03', 'Bareilly', 80, 68, null],
+        ['DIST-04', 'Gorakhpur', 110, 104.5, null],
+        ['DIST-05', 'Jhansi', 75, 60, null],
+        ['Total', '', null, null, '']
+      ],
+      instructions: `### Lab Objective: Scheme Budget Aggregation & Key Ratios
+
+Regional directors monitor fund absorption rates to measure public scheme efficiency. In this lab, you will write formulas to determine fund utilization and grand totals.
+
+#### Instructions:
+1. **Compute Utilization Rates**: In Column E (Rows 1 to 5), calculate the fund utilization percentage using formula \`=(D1/C1)*100\` through \`=(D5/C5)*100\`.
+2. **Compute Total Allocated**: In cell **C6**, enter \`=SUM(C1:C5)\` to find the total target budget.
+3. **Compute Total Disbursed**: In cell **D6**, enter \`=SUM(D1:D5)\` to find the total released disbursements.`,
+      tasks: [
+        {
+          id: 'task_utilization_col',
+          description: 'Calculate Utilization Rate (%) in Column E for all 5 districts',
+          validation_type: 'column_values_match',
+          validation_config: {
+            col: 4,
+            expected_values: [90, 95, 85, 95, 80]
+          }
+        },
+        {
+          id: 'task_sum_allocated',
+          description: 'Calculate Total Target Allocation in cell C6 using =SUM(C1:C5) (Expected: 480)',
+          validation_type: 'cell_value_equals',
+          validation_config: {
+            row: 5,
+            col: 2,
+            expected_value: 480
+          }
+        },
+        {
+          id: 'task_sum_disbursed',
+          description: 'Calculate Total Actual Disbursed in cell D6 using =SUM(D1:D5) (Expected: 430.75)',
+          validation_type: 'cell_value_equals',
+          validation_config: {
+            row: 5,
+            col: 3,
+            expected_value: 430.75
+          }
+        }
+      ]
+    }
   }
 ];
 

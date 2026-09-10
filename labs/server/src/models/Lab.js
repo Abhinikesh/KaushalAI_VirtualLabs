@@ -42,7 +42,7 @@ const labSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['python_sandbox', 'sql_sandbox', 'js_sandbox', 'html_css_sandbox'],
+    enum: ['python_sandbox', 'sql_sandbox', 'js_sandbox', 'html_css_sandbox', 'spreadsheet_sandbox'],
     required: true
   },
   course_title: {
@@ -82,6 +82,15 @@ const labSchema = new mongoose.Schema({
       type: String,
       default: ''
     },
+    // For spreadsheet_sandbox:
+    initial_data: {
+      type: [[mongoose.Schema.Types.Mixed]],
+      default: []
+    },
+    column_headers: [{
+      type: String,
+      trim: true
+    }],
     // Shared:
     instructions: {
       type: String,

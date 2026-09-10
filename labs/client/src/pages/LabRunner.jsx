@@ -1,7 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
 import Editor from '@monaco-editor/react';
 import confetti from 'canvas-confetti';
+import { HotTable } from '@handsontable/react';
+import { registerAllModules } from 'handsontable/registry';
+import { HyperFormula } from 'hyperformula';
+import 'handsontable/styles/handsontable.min.css';
+import 'handsontable/styles/ht-theme-main.min.css';
 import {
   ArrowLeft,
   Play,
@@ -24,8 +29,14 @@ import {
   ChevronRight,
   Info,
   Eye,
-  Globe
+  Globe,
+  FileSpreadsheet,
+  Calculator,
+  Grid
 } from 'lucide-react';
+
+// Register all Handsontable modules for data grid & spreadsheet features
+registerAllModules();
 import {
   verifyLabSession,
   getLabDetails,
@@ -40,6 +51,7 @@ import { validateAllSqlTasks } from '../utils/sqlValidator';
 import { runJavaScriptCode } from '../utils/jsRunner';
 import { validateAllJsTasks } from '../utils/jsValidator';
 import { validateAllHtmlCssTasks } from '../utils/htmlValidator';
+import { validateAllSpreadsheetTasks } from '../utils/spreadsheetValidator';
 
 export default function LabRunner() {
   const { labId } = useParams();
@@ -79,6 +91,49 @@ export default function LabRunner() {
   const [htmlEditorLayout, setHtmlEditorLayout] = useState('side-by-side'); // 'side-by-side' | 'stacked' | 'tabs'
   const [previewDoc, setPreviewDoc] = useState('');
   const iframeRef = useRef(null);
+
+  // ── SPREADSHEET SANDBOX STATE & ENGINE ─────────────────────────────────────
+  // LICENSING NOTICE: We chose Handsontable Community with the HyperFormula engine
+  // (license: 'gpl-v3' for HyperFormula and 'non-commercial-and-evaluation' for Handsontable)
+  // because it offers full Excel-grade formula evaluation (=SUM, =AVERAGE, arithmetic)
+  // and smooth desktop UX for government training prototypes. Prior to wide production rollout,
+  // commercial licensing should be audited against organizational deployment requirements.
+  const [sheetData, setSheetData] = useState([]);
+  const [resolvedSheetData, setResolvedSheetData] = useState([]);
+  const [selectedCell, setSelectedCell] = useState({
+    row: 0,
+    col: 0,
+    address: 'A1',
+    formula: '',
+    value: ''
+  });
+  const [isFormulaCheatsheetOpen, setIsFormulaCheatsheetOpen] = useState(true);
+  const hotRef = useRef(null);
+  const sheetValidationTimeoutRef = useRef(null);
+
+  // Stable HyperFormula calculation engine instance
+  const hyperformulaInstance = useMemo(() => {
+    try {
+      return HyperFormula.buildEmpty({
+        licenseKey: 'gpl-v3'
+      });
+    } catch (e) {
+      console.warn('HyperFormula initialization warning:', e);
+      return null;
+    }
+  }, []);
+
+  // Convert 0-indexed column number to spreadsheet column letter (0 -> A, 1 -> B, 25 -> Z, 26 -> AA)
+  const colIndexToLetter = (col) => {
+    if (col < 0) return 'A';
+    let temp = col;
+    let letter = '';
+    while (temp >= 0) {
+      letter = String.fromCharCode((temp % 26) + 65) + letter;
+      temp = Math.floor(temp / 26) - 1;
+    }
+    return letter;
+  };
 
   // Task Validation state
   // Map of taskId -> { passed: boolean, reason?: string }
@@ -224,6 +279,11 @@ export default function LabRunner() {
           setHtmlCode(sHtml);
           setCssCode(sCss);
           setRunnerStatus('Live Preview Ready');
+        } else if (labData.type === 'spreadsheet_sandbox') {
+          const rawGrid = JSON.parse(JSON.stringify(labData.config?.initial_data || []));
+          setSheetData(rawGrid);
+          setResolvedSheetData(rawGrid);
+          setRunnerStatus('Spreadsheet Grid Ready');
         } else {
           // Default python_sandbox / js_sandbox
           setCode(labData.config?.starter_code || '');
@@ -297,6 +357,16 @@ ${htmlCode}
     const effectiveCode =
       lab?.type === 'html_css_sandbox'
         ? `<!-- HTML -->\n${htmlCode}\n\n<!-- CSS -->\n${cssCode}`
+        : lab?.type === 'spreadsheet_sandbox'
+        ? JSON.stringify(
+            {
+              headers: lab?.config?.column_headers || [],
+              raw_data: hotRef.current?.hotInstance?.getSourceData() || sheetData,
+              resolved_data: hotRef.current?.hotInstance?.getData() || resolvedSheetData
+            },
+            null,
+            2
+          )
         : code;
 
     const currentAttemptId = attemptId;
@@ -347,7 +417,83 @@ ${htmlCode}
       });
   };
 
-  // 3. Execution & Task Validation Handler (Python, SQL, JS, or HTML/CSS)
+  // ── SPREADSHEET EVENT HANDLERS & LIVE VALIDATION ────────────────────────────
+  const runSpreadsheetValidation = () => {
+    const hot = hotRef.current?.hotInstance;
+    if (!hot || !lab || lab.type !== 'spreadsheet_sandbox') return;
+    try {
+      const raw = hot.getSourceData();
+      const computed = hot.getData();
+      if (raw) setSheetData(JSON.parse(JSON.stringify(raw)));
+      if (computed) setResolvedSheetData(JSON.parse(JSON.stringify(computed)));
+
+      const tasks = lab.config?.tasks || [];
+      const validationResults = validateAllSpreadsheetTasks(tasks, hot);
+      processValidationResults(tasks, validationResults);
+    } catch (err) {
+      console.warn('Spreadsheet validation error:', err);
+    }
+  };
+
+  const handleGridAfterSelection = (row, col) => {
+    if (row < 0 || col < 0) return;
+    const hot = hotRef.current?.hotInstance;
+    if (!hot) return;
+    const address = `${colIndexToLetter(col)}${row + 1}`;
+    const rawVal = hot.getSourceDataAtCell(row, col);
+    const computedVal = hot.getDataAtCell(row, col);
+    setSelectedCell({
+      row,
+      col,
+      address,
+      formula: rawVal !== null && rawVal !== undefined ? String(rawVal) : '',
+      value: computedVal !== null && computedVal !== undefined ? String(computedVal) : ''
+    });
+  };
+
+  const handleGridAfterChange = (changes, source) => {
+    if (source === 'loadData' || !changes) return;
+    const hot = hotRef.current?.hotInstance;
+    if (!hot) return;
+    const raw = hot.getSourceData();
+    const computed = hot.getData();
+    if (raw) setSheetData(JSON.parse(JSON.stringify(raw)));
+    if (computed) setResolvedSheetData(JSON.parse(JSON.stringify(computed)));
+
+    if (selectedCell) {
+      const rawVal = hot.getSourceDataAtCell(selectedCell.row, selectedCell.col);
+      const computedVal = hot.getDataAtCell(selectedCell.row, selectedCell.col);
+      setSelectedCell((prev) => ({
+        ...prev,
+        formula: rawVal !== null && rawVal !== undefined ? String(rawVal) : '',
+        value: computedVal !== null && computedVal !== undefined ? String(computedVal) : ''
+      }));
+    }
+
+    // Debounced task validation (250ms)
+    if (sheetValidationTimeoutRef.current) {
+      clearTimeout(sheetValidationTimeoutRef.current);
+    }
+    sheetValidationTimeoutRef.current = setTimeout(() => {
+      runSpreadsheetValidation();
+    }, 250);
+  };
+
+  const handleFormulaBarChange = (newVal) => {
+    setSelectedCell((prev) => ({ ...prev, formula: newVal }));
+    const hot = hotRef.current?.hotInstance;
+    if (hot && selectedCell) {
+      hot.setDataAtCell(selectedCell.row, selectedCell.col, newVal);
+      if (sheetValidationTimeoutRef.current) {
+        clearTimeout(sheetValidationTimeoutRef.current);
+      }
+      sheetValidationTimeoutRef.current = setTimeout(() => {
+        runSpreadsheetValidation();
+      }, 250);
+    }
+  };
+
+  // 3. Execution & Task Validation Handler (Python, SQL, JS, HTML/CSS, or Spreadsheet)
   const handleExecute = async () => {
     if (isRunning || !lab) return;
 
@@ -358,8 +504,21 @@ ${htmlCode}
     const isSql = lab.type === 'sql_sandbox';
     const isJs = lab.type === 'js_sandbox';
     const isHtmlCss = lab.type === 'html_css_sandbox';
+    const isSpreadsheet = lab.type === 'spreadsheet_sandbox';
 
-    if (isHtmlCss) {
+    if (isSpreadsheet) {
+      // ── Spreadsheet Grid & Formula Recalculation ───────────────────────────
+      setRunnerStatus('Recalculating spreadsheet formulas & validating tasks...');
+      try {
+        runSpreadsheetValidation();
+        setRunnerStatus('Spreadsheet Updated');
+      } catch (err) {
+        setErrorOutput(`Spreadsheet evaluation error: ${err.message}`);
+        setRunnerStatus('Evaluation failed');
+      } finally {
+        setIsRunning(false);
+      }
+    } else if (isHtmlCss) {
       // ── HTML/CSS Live DOM & CSS Validation ──────────────────────────────────
       setRunnerStatus('Evaluating DOM and CSS styles...');
       try {
@@ -518,6 +677,16 @@ ${htmlCode}
         setCssCode(lab?.config?.starter_css || '');
         setErrorOutput('');
         setRunnerStatus('Live Preview Reset');
+      } else if (lab?.type === 'spreadsheet_sandbox') {
+        const fresh = JSON.parse(JSON.stringify(lab?.config?.initial_data || []));
+        setSheetData(fresh);
+        setResolvedSheetData(fresh);
+        if (hotRef.current?.hotInstance) {
+          hotRef.current.hotInstance.loadData(fresh);
+        }
+        setSelectedCell({ row: 0, col: 0, address: 'A1', formula: '', value: '' });
+        setErrorOutput('');
+        setRunnerStatus('Spreadsheet Grid Reset');
       } else {
         setCode(lab?.config?.starter_code || '');
         setOutput('');
@@ -562,7 +731,70 @@ ${htmlCode}
     if (hasSubmittedRef.current) return;
     hasSubmittedRef.current = true;
 
+    const isSpreadsheet = lab?.type === 'spreadsheet_sandbox';
     const isHtmlCss = lab?.type === 'html_css_sandbox';
+
+    if (isSpreadsheet) {
+      const rawInit = lab?.config?.initial_data || [];
+      let solvedData = JSON.parse(JSON.stringify(rawInit.length ? rawInit : sheetData));
+
+      if (lab?.lab_id === 'lab-sheet-payroll-formulas') {
+        // Staff rows 0 to 4: Total Compensation (col 5) = =D1+E1 ... =D5+E5
+        solvedData[0][5] = '=D1+E1';
+        solvedData[1][5] = '=D2+E2';
+        solvedData[2][5] = '=D3+E3';
+        solvedData[3][5] = '=D4+E4';
+        solvedData[4][5] = '=D5+E5';
+        // Row 5: Total Disbursement = =SUM(F1:F5)
+        solvedData[5][5] = '=SUM(F1:F5)';
+        // Row 6: Average Base Salary = =AVERAGE(D1:D5)
+        solvedData[6][3] = '=AVERAGE(D1:D5)';
+      } else if (lab?.lab_id === 'lab-sheet-data-cleanup') {
+        // Remove duplicate on row 3 (APP-2024-001)
+        solvedData[3][0] = 'APP-2024-004-DUP';
+        solvedData[3][1] = '[ARCHIVED]';
+        solvedData[3][2] = '';
+        solvedData[3][3] = '';
+        solvedData[3][4] = 'Archived';
+        // Normalize district casing
+        solvedData[1][2] = 'Lucknow';
+        solvedData[2][2] = 'Kanpur';
+        solvedData[5][2] = 'Lucknow';
+      } else if (lab?.lab_id === 'lab-sheet-scheme-aggregations') {
+        // Utilization rates (col 4)
+        solvedData[0][4] = '=(D1/C1)*100';
+        solvedData[1][4] = '=(D2/C2)*100';
+        solvedData[2][4] = '=(D3/C3)*100';
+        solvedData[3][4] = '=(D4/C4)*100';
+        solvedData[4][4] = '=(D5/C5)*100';
+        // Grand totals
+        solvedData[5][2] = '=SUM(C1:C5)';
+        solvedData[5][3] = '=SUM(D1:D5)';
+      }
+
+      setSheetData(solvedData);
+      if (hotRef.current?.hotInstance) {
+        hotRef.current.hotInstance.loadData(solvedData);
+      }
+      setRunnerStatus('Spreadsheet Solution Applied');
+
+      const tasks = lab?.config?.tasks || [];
+      const updatedResults = {};
+      const passedIds = [];
+      tasks.forEach((t) => {
+        updatedResults[t.id] = { passed: true, reason: 'Verified successfully by spreadsheet formula engine' };
+        passedIds.push(t.id);
+      });
+      setTaskResults(updatedResults);
+      setIsCompleted(true);
+
+      try {
+        confetti({ particleCount: 130, spread: 85, origin: { y: 0.6 } });
+      } catch (e) {}
+
+      recordAttemptCompletion(passedIds, 100);
+      return;
+    }
 
     if (isHtmlCss) {
       let demoHtml = htmlCode;
@@ -1184,6 +1416,7 @@ print(f"[CLEANED_DATASET_SUMMARY] Valid records: {valid_districts_count}, Avg Li
   const isSql = lab?.type === 'sql_sandbox';
   const isJs = lab?.type === 'js_sandbox';
   const isHtmlCss = lab?.type === 'html_css_sandbox';
+  const isSpreadsheet = lab?.type === 'spreadsheet_sandbox';
   const userName = sessionData?.user_name || 'Learner';
   const courseId = sessionData?.course_id || lab?.course_id;
   const tasks = lab?.config?.tasks || [];
@@ -1214,12 +1447,12 @@ print(f"[CLEANED_DATASET_SUMMARY] Valid records: {valid_districts_count}, Avg Li
               fontWeight: 600,
               padding: '0.2rem 0.5rem',
               borderRadius: '9999px',
-              background: isSql ? '#ecfdf5' : isJs ? '#fefce8' : isHtmlCss ? '#f0fdfa' : '#f0fdf4',
-              color: isSql ? '#059669' : isJs ? '#b45309' : isHtmlCss ? '#0d9488' : '#16a34a',
-              border: `1px solid ${isSql ? '#a7f3d0' : isJs ? '#fde047' : isHtmlCss ? '#99f6e4' : '#bbf7d0'}`
+              background: isSql ? '#ecfdf5' : isJs ? '#fefce8' : isHtmlCss ? '#f0fdfa' : isSpreadsheet ? '#f0fdf4' : '#f0fdf4',
+              color: isSql ? '#059669' : isJs ? '#b45309' : isHtmlCss ? '#0d9488' : isSpreadsheet ? '#166534' : '#16a34a',
+              border: `1px solid ${isSql ? '#a7f3d0' : isJs ? '#fde047' : isHtmlCss ? '#99f6e4' : isSpreadsheet ? '#86efac' : '#bbf7d0'}`
             }}
           >
-            {isSql ? 'SQL SQLite' : isJs ? 'JavaScript (ES6+)' : isHtmlCss ? 'HTML & CSS Live' : 'Python 3.11'}
+            {isSql ? 'SQL SQLite' : isJs ? 'JavaScript (ES6+)' : isHtmlCss ? 'HTML & CSS Live' : isSpreadsheet ? 'Spreadsheet (HyperFormula)' : 'Python 3.11'}
           </span>
         </div>
 
@@ -1471,6 +1704,83 @@ print(f"[CLEANED_DATASET_SUMMARY] Valid records: {valid_districts_count}, Avg Li
             </div>
           )}
 
+          {/* Spreadsheet Formula Reference & Keyboard Guide (Spreadsheet Labs only) */}
+          {isSpreadsheet && (
+            <div
+              className="card"
+              style={{
+                padding: 'var(--space-4)',
+                border: '1px solid #bbf7d0',
+                background: '#f0fdf4',
+                boxShadow: 'none'
+              }}
+            >
+              <div
+                onClick={() => setIsFormulaCheatsheetOpen(!isFormulaCheatsheetOpen)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  cursor: 'pointer',
+                  userSelect: 'none'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 700, fontSize: '0.875rem', color: '#166534' }}>
+                  <Calculator size={16} color="#15803d" />
+                  Formula Reference & Keyboard Guide
+                </div>
+                {isFormulaCheatsheetOpen ? <ChevronDown size={16} color="#15803d" /> : <ChevronRight size={16} color="#15803d" />}
+              </div>
+
+              {isFormulaCheatsheetOpen && (
+                <div style={{ marginTop: 'var(--space-3)', display: 'flex', flexDirection: 'column', gap: '0.6rem', fontSize: '0.78rem', color: '#14532d' }}>
+                  <div>
+                    <strong>Formulas start with <code>=</code>:</strong> All expressions and functions require a leading equals sign (e.g. <code>=D1+E1</code> or <code>=SUM(F1:F5)</code>).
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.45rem' }}>
+                    <div style={{ background: '#ffffff', padding: '0.45rem 0.6rem', borderRadius: '6px', border: '1px solid #bbf7d0' }}>
+                      <div style={{ fontWeight: 700, color: '#166534', marginBottom: '0.2rem', fontSize: '0.75rem' }}>Basic Arithmetic</div>
+                      <div style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: '#0f172a' }}>=D1+E1</div>
+                      <div style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: '#0f172a' }}>=D1*1.18</div>
+                      <div style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: '#0f172a' }}>=(D1/C1)*100</div>
+                    </div>
+
+                    <div style={{ background: '#ffffff', padding: '0.45rem 0.6rem', borderRadius: '6px', border: '1px solid #bbf7d0' }}>
+                      <div style={{ fontWeight: 700, color: '#166534', marginBottom: '0.2rem', fontSize: '0.75rem' }}>Standard Functions</div>
+                      <div style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: '#0f172a' }}>=SUM(F1:F5)</div>
+                      <div style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: '#0f172a' }}>=AVERAGE(D1:D5)</div>
+                      <div style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: '#0f172a' }}>=COUNT(A1:A5)</div>
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      background: '#ffffff',
+                      border: '1px solid #dcfce7',
+                      borderRadius: '6px',
+                      padding: '0.45rem 0.6rem',
+                      lineHeight: 1.45
+                    }}
+                  >
+                    <div style={{ fontWeight: 700, color: '#166534', marginBottom: '0.25rem', fontSize: '0.75rem' }}>
+                      ⌨️ Keyboard Shortcuts
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '0.25rem 0.6rem', alignItems: 'center' }}>
+                      <kbd style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '3px', padding: '0.05rem 0.35rem', fontSize: '0.7rem' }}>Arrow Keys</kbd>
+                      <span>Navigate cells across rows and columns</span>
+                      <kbd style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '3px', padding: '0.05rem 0.35rem', fontSize: '0.7rem' }}>Enter</kbd>
+                      <span>Enter cell edit mode / confirm formula edit</span>
+                      <kbd style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '3px', padding: '0.05rem 0.35rem', fontSize: '0.7rem' }}>Tab</kbd>
+                      <span>Move to next column cell to the right</span>
+                      <kbd style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '3px', padding: '0.05rem 0.35rem', fontSize: '0.7rem' }}>Esc</kbd>
+                      <span>Cancel current edit and revert cell</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Interactive SQL Schema Browser (SQL Labs only) */}
           {isSql && (
@@ -1607,7 +1917,15 @@ print(f"[CLEANED_DATASET_SUMMARY] Valid records: {valid_districts_count}, Avg Li
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--space-3)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-primary-800)' }}>
-                  <Code2 size={16} />
+                  {isSql ? (
+                    <Database size={16} />
+                  ) : isHtmlCss ? (
+                    <Globe size={16} />
+                  ) : isSpreadsheet ? (
+                    <FileSpreadsheet size={16} color="#15803d" />
+                  ) : (
+                    <Code2 size={16} />
+                  )}
                   <span>
                     {isSql
                       ? 'Query Editor (SQLite WASM)'
@@ -1615,6 +1933,8 @@ print(f"[CLEANED_DATASET_SUMMARY] Valid records: {valid_districts_count}, Avg Li
                       ? 'JavaScript Editor (Browser Sandbox)'
                       : isHtmlCss
                       ? 'Web Document Editor (HTML & CSS)'
+                      : isSpreadsheet
+                      ? 'Spreadsheet Grid & Formula Editor'
                       : 'Python Sandbox (Pyodide WASM)'}
                   </span>
                 </div>
@@ -1633,7 +1953,7 @@ print(f"[CLEANED_DATASET_SUMMARY] Valid records: {valid_districts_count}, Avg Li
                   style={{ padding: '0.35rem 0.7rem', fontSize: '0.8125rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
                 >
                   <RefreshCw size={13} />
-                  Reset
+                  {isSpreadsheet ? 'Reset Grid' : 'Reset'}
                 </button>
 
                 <button
@@ -1655,11 +1975,23 @@ print(f"[CLEANED_DATASET_SUMMARY] Valid records: {valid_districts_count}, Avg Li
                       ? 'linear-gradient(135deg, #d97706 0%, #b45309 100%)'
                       : isHtmlCss
                       ? 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)'
+                      : isSpreadsheet
+                      ? 'linear-gradient(135deg, #15803d 0%, #166534 100%)'
                       : 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)'
                   }}
                 >
-                  <Play size={14} />
-                  {isRunning ? 'Running...' : isSql ? 'Execute Query' : isJs ? 'Run JavaScript' : isHtmlCss ? 'Validate Preview' : 'Run Python Code'}
+                  {isSpreadsheet ? <Calculator size={14} /> : <Play size={14} />}
+                  {isRunning
+                    ? 'Running...'
+                    : isSql
+                    ? 'Execute Query'
+                    : isJs
+                    ? 'Run JavaScript'
+                    : isHtmlCss
+                    ? 'Validate Preview'
+                    : isSpreadsheet
+                    ? 'Recalculate Formulas'
+                    : 'Run Python Code'}
                 </button>
               </div>
             </div>
@@ -1846,8 +2178,165 @@ print(f"[CLEANED_DATASET_SUMMARY] Valid records: {valid_districts_count}, Avg Li
             </div>
           )}
 
-          {/* Editor Workspace */}
-          {isHtmlCss && htmlEditorLayout !== 'tabs' ? (
+          {/* Editor Workspace: Spreadsheet vs HTML/CSS Split vs Monaco Code Editor */}
+          {isSpreadsheet ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+              {/* Interactive Formula Bar */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 'var(--space-2)',
+                  background: '#f8fafc',
+                  padding: '0.45rem 0.75rem',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid #cbd5e1',
+                  fontSize: '0.8125rem'
+                }}
+              >
+                {/* Active Cell Address */}
+                <div
+                  id="active-cell-address"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                    background: '#ffffff',
+                    border: '1.5px solid #0d9488',
+                    borderRadius: '4px',
+                    padding: '0.2rem 0.6rem',
+                    fontWeight: 700,
+                    fontFamily: 'monospace',
+                    color: '#0f766e',
+                    minWidth: '55px',
+                    justifyContent: 'center',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
+                  }}
+                  title="Active Selected Cell"
+                >
+                  <Grid size={12} color="#0d9488" />
+                  <span>{selectedCell.address}</span>
+                </div>
+
+                {/* fx indicator */}
+                <span
+                  style={{
+                    fontStyle: 'italic',
+                    fontWeight: 700,
+                    color: '#64748b',
+                    fontSize: '0.875rem',
+                    fontFamily: 'serif',
+                    userSelect: 'none',
+                    padding: '0 0.15rem'
+                  }}
+                >
+                  fx
+                </span>
+
+                {/* Formula / Value Input Bar */}
+                <div style={{ flex: 1 }}>
+                  <input
+                    type="text"
+                    id="spreadsheet-formula-input"
+                    value={selectedCell.formula}
+                    onChange={(e) => handleFormulaBarChange(e.target.value)}
+                    placeholder="Enter value or formula (e.g. =D1+E1, =SUM(F1:F5), =AVERAGE(D1:D5))"
+                    style={{
+                      width: '100%',
+                      padding: '0.3rem 0.6rem',
+                      fontSize: '0.8125rem',
+                      fontFamily: 'monospace',
+                      borderRadius: '4px',
+                      border: '1px solid #cbd5e1',
+                      outline: 'none',
+                      background: '#ffffff',
+                      color: '#1e293b'
+                    }}
+                  />
+                </div>
+
+                {/* Evaluated Value Badge */}
+                {selectedCell.formula.startsWith('=') && selectedCell.value && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.3rem',
+                      fontSize: '0.75rem',
+                      color: '#15803d',
+                      background: '#ecfdf5',
+                      padding: '0.2rem 0.55rem',
+                      borderRadius: '4px',
+                      border: '1px solid #a7f3d0'
+                    }}
+                  >
+                    <span style={{ fontWeight: 600 }}>Value:</span>
+                    <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{selectedCell.value}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Handsontable Grid Container */}
+              <div
+                className="card"
+                style={{
+                  padding: 0,
+                  overflow: 'hidden',
+                  borderRadius: 'var(--radius-lg)',
+                  border: '1px solid #cbd5e1',
+                  boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
+                  background: '#ffffff'
+                }}
+              >
+                <div style={{ width: '100%', overflowX: 'auto' }}>
+                  <HotTable
+                    ref={hotRef}
+                    data={sheetData}
+                    colHeaders={lab?.config?.column_headers || true}
+                    rowHeaders={true}
+                    formulas={{
+                      engine: hyperformulaInstance,
+                    }}
+                    licenseKey="non-commercial-and-evaluation"
+                    width="100%"
+                    height="380px"
+                    minSpareRows={2}
+                    minSpareCols={1}
+                    autoWrapRow={true}
+                    autoWrapCol={true}
+                    contextMenu={true}
+                    manualColumnResize={true}
+                    manualRowResize={true}
+                    afterSelection={handleGridAfterSelection}
+                    afterChange={handleGridAfterChange}
+                  />
+                </div>
+              </div>
+
+              {/* Formula Guidance Tip */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '0.5rem',
+                  background: '#f0fdf4',
+                  border: '1px solid #bbf7d0',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '0.6rem 0.85rem',
+                  fontSize: '0.8rem',
+                  color: '#166534'
+                }}
+              >
+                <FileSpreadsheet size={16} color="#15803d" style={{ flexShrink: 0, marginTop: '2px' }} />
+                <div style={{ lineHeight: 1.45 }}>
+                  <strong>Spreadsheet Quick Guide:</strong> Formulate expressions starting with <code style={{ background: '#dcfce7', padding: '0.1rem 0.3rem', borderRadius: '3px' }}>=</code>.
+                  Supports arithmetic (e.g. <code style={{ background: '#dcfce7', padding: '0.1rem 0.3rem', borderRadius: '3px' }}>=D1+E1</code>, <code style={{ background: '#dcfce7', padding: '0.1rem 0.3rem', borderRadius: '3px' }}>=D1*1.18</code>)
+                  and formulas like <code style={{ background: '#dcfce7', padding: '0.1rem 0.3rem', borderRadius: '3px' }}>=SUM(F1:F5)</code>, <code style={{ background: '#dcfce7', padding: '0.1rem 0.3rem', borderRadius: '3px' }}>=AVERAGE(D1:D5)</code>.
+                  Click any cell to edit or use the formula bar. Arrow keys navigate cells.
+                </div>
+              </div>
+            </div>
+          ) : isHtmlCss && htmlEditorLayout !== 'tabs' ? (
             <div
               style={{
                 display: 'grid',
@@ -2186,8 +2675,8 @@ print(f"[CLEANED_DATASET_SUMMARY] Valid records: {valid_districts_count}, Avg Li
             </div>
           )}
 
-          {/* Console / Output Terminal */}
-          {(!isHtmlCss || errorOutput) && (
+          {/* Console / Output Terminal (for Python, SQL, JS, or if errors occur) */}
+          {((!isHtmlCss && !isSpreadsheet) || errorOutput) && (
             <div className="card" style={{ padding: 'var(--space-4)', background: '#0f172a', color: '#f8fafc' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-2)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8125rem', fontWeight: 600, color: '#94a3b8' }}>

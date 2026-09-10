@@ -56,6 +56,8 @@ async function getLabById(req, res, next) {
           starter_query: lab.config?.starter_query || '',
           starter_html: lab.config?.starter_html || '',
           starter_css: lab.config?.starter_css || '',
+          initial_data: lab.config?.initial_data || [],
+          column_headers: lab.config?.column_headers || [],
           instructions: lab.config?.instructions || '',
           tasks: lab.config?.tasks || []
         },
