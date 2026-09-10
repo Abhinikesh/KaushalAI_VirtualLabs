@@ -75,7 +75,8 @@ export default function LabRunner() {
   // HTML/CSS Live Editor specific state
   const [htmlCode, setHtmlCode] = useState('');
   const [cssCode, setCssCode] = useState('');
-  const [activeEditorTab, setActiveEditorTab] = useState('html'); // 'html' | 'css'
+  const [activeEditorTab, setActiveEditorTab] = useState('html'); // 'html' | 'css' (for tabbed mode)
+  const [htmlEditorLayout, setHtmlEditorLayout] = useState('side-by-side'); // 'side-by-side' | 'stacked' | 'tabs'
   const [previewDoc, setPreviewDoc] = useState('');
   const iframeRef = useRef(null);
 
@@ -1664,127 +1665,361 @@ print(f"[CLEANED_DATASET_SUMMARY] Valid records: {valid_districts_count}, Avg Li
             </div>
           </div>
 
-          {/* File Switcher Tabs (HTML / CSS) */}
+          {/* File Switcher & Layout Controls for HTML/CSS Sandbox */}
           {isHtmlCss && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-              <button
-                type="button"
-                id="tab-html-btn"
-                onClick={() => setActiveEditorTab('html')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.4rem',
-                  padding: '0.35rem 0.8rem',
-                  fontSize: '0.8125rem',
-                  fontWeight: 600,
-                  borderRadius: '6px',
-                  border: activeEditorTab === 'html' ? '1.5px solid #0d9488' : '1px solid #cbd5e1',
-                  background: activeEditorTab === 'html' ? '#f0fdfa' : '#ffffff',
-                  color: activeEditorTab === 'html' ? '#0f766e' : '#64748b',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease'
-                }}
-              >
-                <span>📄</span>
-                <span>index.html</span>
-                <span
-                  style={{
-                    fontSize: '0.68rem',
-                    padding: '0.1rem 0.35rem',
-                    borderRadius: '4px',
-                    background: activeEditorTab === 'html' ? '#ccfbf1' : '#f1f5f9',
-                    color: activeEditorTab === 'html' ? '#115e59' : '#94a3b8'
-                  }}
-                >
-                  HTML
-                </span>
-              </button>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: 'var(--space-2)'
+              }}
+            >
+              {/* Left: Tab Switchers if in tabbed mode, or simultaneous edit indicator */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                {htmlEditorLayout === 'tabs' ? (
+                  <>
+                    <button
+                      type="button"
+                      id="tab-html-btn"
+                      onClick={() => setActiveEditorTab('html')}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.4rem',
+                        padding: '0.35rem 0.8rem',
+                        fontSize: '0.8125rem',
+                        fontWeight: 600,
+                        borderRadius: '6px',
+                        border: activeEditorTab === 'html' ? '1.5px solid #0d9488' : '1px solid #cbd5e1',
+                        background: activeEditorTab === 'html' ? '#f0fdfa' : '#ffffff',
+                        color: activeEditorTab === 'html' ? '#0f766e' : '#64748b',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <span>📄</span>
+                      <span>index.html</span>
+                      <span
+                        style={{
+                          fontSize: '0.68rem',
+                          padding: '0.1rem 0.35rem',
+                          borderRadius: '4px',
+                          background: activeEditorTab === 'html' ? '#ccfbf1' : '#f1f5f9',
+                          color: activeEditorTab === 'html' ? '#115e59' : '#94a3b8'
+                        }}
+                      >
+                        HTML
+                      </span>
+                    </button>
 
-              <button
-                type="button"
-                id="tab-css-btn"
-                onClick={() => setActiveEditorTab('css')}
+                    <button
+                      type="button"
+                      id="tab-css-btn"
+                      onClick={() => setActiveEditorTab('css')}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.4rem',
+                        padding: '0.35rem 0.8rem',
+                        fontSize: '0.8125rem',
+                        fontWeight: 600,
+                        borderRadius: '6px',
+                        border: activeEditorTab === 'css' ? '1.5px solid #0d9488' : '1px solid #cbd5e1',
+                        background: activeEditorTab === 'css' ? '#f0fdfa' : '#ffffff',
+                        color: activeEditorTab === 'css' ? '#0f766e' : '#64748b',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <span>🎨</span>
+                      <span>styles.css</span>
+                      <span
+                        style={{
+                          fontSize: '0.68rem',
+                          padding: '0.1rem 0.35rem',
+                          borderRadius: '4px',
+                          background: activeEditorTab === 'css' ? '#ccfbf1' : '#f1f5f9',
+                          color: activeEditorTab === 'css' ? '#115e59' : '#94a3b8'
+                        }}
+                      >
+                        CSS
+                      </span>
+                    </button>
+                  </>
+                ) : (
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                      fontSize: '0.78rem',
+                      color: '#0f766e',
+                      fontWeight: 600,
+                      background: '#f0fdfa',
+                      padding: '0.3rem 0.65rem',
+                      borderRadius: '6px',
+                      border: '1px solid #ccfbf1'
+                    }}
+                  >
+                    <span>⚡ Live Simultaneous Editing</span>
+                    <span style={{ color: '#64748b', fontWeight: 400 }}>
+                      (HTML &amp; CSS update preview live)
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Right: Layout Mode Selector (Side-by-Side vs Stacked vs Tabs) */}
+              <div
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.4rem',
-                  padding: '0.35rem 0.8rem',
-                  fontSize: '0.8125rem',
-                  fontWeight: 600,
+                  background: '#f1f5f9',
                   borderRadius: '6px',
-                  border: activeEditorTab === 'css' ? '1.5px solid #0d9488' : '1px solid #cbd5e1',
-                  background: activeEditorTab === 'css' ? '#f0fdfa' : '#ffffff',
-                  color: activeEditorTab === 'css' ? '#0f766e' : '#64748b',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease'
+                  padding: '2px',
+                  gap: '2px'
                 }}
               >
-                <span>🎨</span>
-                <span>styles.css</span>
-                <span
+                <button
+                  type="button"
+                  id="layout-split-btn"
+                  onClick={() => setHtmlEditorLayout('side-by-side')}
+                  title="Side-by-side editors"
                   style={{
-                    fontSize: '0.68rem',
-                    padding: '0.1rem 0.35rem',
+                    padding: '0.25rem 0.55rem',
+                    fontSize: '0.72rem',
+                    fontWeight: 600,
                     borderRadius: '4px',
-                    background: activeEditorTab === 'css' ? '#ccfbf1' : '#f1f5f9',
-                    color: activeEditorTab === 'css' ? '#115e59' : '#94a3b8'
+                    border: 'none',
+                    cursor: 'pointer',
+                    background: htmlEditorLayout === 'side-by-side' ? '#ffffff' : 'transparent',
+                    color: htmlEditorLayout === 'side-by-side' ? '#0f766e' : '#64748b',
+                    boxShadow: htmlEditorLayout === 'side-by-side' ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
+                    transition: 'all 0.15s ease'
                   }}
                 >
-                  CSS
-                </span>
-              </button>
+                  Side-by-Side
+                </button>
+                <button
+                  type="button"
+                  id="layout-stacked-btn"
+                  onClick={() => setHtmlEditorLayout('stacked')}
+                  title="Vertically stacked editors"
+                  style={{
+                    padding: '0.25rem 0.55rem',
+                    fontSize: '0.72rem',
+                    fontWeight: 600,
+                    borderRadius: '4px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    background: htmlEditorLayout === 'stacked' ? '#ffffff' : 'transparent',
+                    color: htmlEditorLayout === 'stacked' ? '#0f766e' : '#64748b',
+                    boxShadow: htmlEditorLayout === 'stacked' ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  Stacked
+                </button>
+                <button
+                  type="button"
+                  id="layout-tabs-btn"
+                  onClick={() => setHtmlEditorLayout('tabs')}
+                  title="Tabbed single editor"
+                  style={{
+                    padding: '0.25rem 0.55rem',
+                    fontSize: '0.72rem',
+                    fontWeight: 600,
+                    borderRadius: '4px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    background: htmlEditorLayout === 'tabs' ? '#ffffff' : 'transparent',
+                    color: htmlEditorLayout === 'tabs' ? '#0f766e' : '#64748b',
+                    boxShadow: htmlEditorLayout === 'tabs' ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  Tabs
+                </button>
+              </div>
             </div>
           )}
 
-          {/* Monaco Editor Container */}
-          <div
-            className="card"
-            style={{
-              padding: 0,
-              overflow: 'hidden',
-              borderRadius: 'var(--radius-lg)',
-              border: '1px solid #cbd5e1',
-              boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)'
-            }}
-          >
-            <Editor
-              height={isHtmlCss ? '300px' : '360px'}
-              language={
-                isSql
-                  ? 'sql'
-                  : isJs
-                  ? 'javascript'
-                  : isHtmlCss
-                  ? activeEditorTab === 'css'
-                    ? 'css'
-                    : 'html'
-                  : 'python'
-              }
-              value={isHtmlCss ? (activeEditorTab === 'css' ? cssCode : htmlCode) : code}
-              onChange={(value) => {
-                if (isHtmlCss) {
-                  if (activeEditorTab === 'css') {
-                    setCssCode(value || '');
-                  } else {
-                    setHtmlCode(value || '');
-                  }
-                } else {
-                  setCode(value || '');
+          {/* Editor Workspace */}
+          {isHtmlCss && htmlEditorLayout !== 'tabs' ? (
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns:
+                  htmlEditorLayout === 'side-by-side' ? 'repeat(auto-fit, minmax(280px, 1fr))' : '1fr',
+                gap: 'var(--space-3)'
+              }}
+            >
+              {/* HTML Editor Panel */}
+              <div
+                className="card"
+                style={{
+                  padding: 0,
+                  overflow: 'hidden',
+                  borderRadius: 'var(--radius-lg)',
+                  border: '1px solid #cbd5e1',
+                  boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)'
+                }}
+              >
+                <div
+                  style={{
+                    background: '#1e293b',
+                    padding: '0.45rem 0.75rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    borderBottom: '1px solid #334155'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <span style={{ fontSize: '0.8rem' }}>📄</span>
+                    <span style={{ fontSize: '0.78rem', fontWeight: 600, color: '#f8fafc' }}>index.html</span>
+                    <span
+                      style={{
+                        fontSize: '0.65rem',
+                        padding: '0.05rem 0.35rem',
+                        borderRadius: '3px',
+                        background: '#0d9488',
+                        color: '#ffffff',
+                        fontWeight: 700
+                      }}
+                    >
+                      HTML5
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>{htmlCode.length} chars</span>
+                </div>
+                <Editor
+                  height={htmlEditorLayout === 'side-by-side' ? '270px' : '180px'}
+                  language="html"
+                  value={htmlCode}
+                  onChange={(val) => setHtmlCode(val || '')}
+                  theme="vs-dark"
+                  options={{
+                    minimap: { enabled: false },
+                    fontSize: 12.5,
+                    lineNumbers: 'on',
+                    scrollBeyondLastLine: false,
+                    automaticLayout: true,
+                    tabSize: 2,
+                    wordWrap: 'on'
+                  }}
+                />
+              </div>
+
+              {/* CSS Editor Panel */}
+              <div
+                className="card"
+                style={{
+                  padding: 0,
+                  overflow: 'hidden',
+                  borderRadius: 'var(--radius-lg)',
+                  border: '1px solid #cbd5e1',
+                  boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)'
+                }}
+              >
+                <div
+                  style={{
+                    background: '#1e293b',
+                    padding: '0.45rem 0.75rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    borderBottom: '1px solid #334155'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <span style={{ fontSize: '0.8rem' }}>🎨</span>
+                    <span style={{ fontSize: '0.78rem', fontWeight: 600, color: '#f8fafc' }}>styles.css</span>
+                    <span
+                      style={{
+                        fontSize: '0.65rem',
+                        padding: '0.05rem 0.35rem',
+                        borderRadius: '3px',
+                        background: '#0284c7',
+                        color: '#ffffff',
+                        fontWeight: 700
+                      }}
+                    >
+                      CSS3
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>{cssCode.length} chars</span>
+                </div>
+                <Editor
+                  height={htmlEditorLayout === 'side-by-side' ? '270px' : '180px'}
+                  language="css"
+                  value={cssCode}
+                  onChange={(val) => setCssCode(val || '')}
+                  theme="vs-dark"
+                  options={{
+                    minimap: { enabled: false },
+                    fontSize: 12.5,
+                    lineNumbers: 'on',
+                    scrollBeyondLastLine: false,
+                    automaticLayout: true,
+                    tabSize: 2,
+                    wordWrap: 'on'
+                  }}
+                />
+              </div>
+            </div>
+          ) : (
+            /* Single Monaco Editor Container (for Tabs mode or Python/SQL/JS sandboxes) */
+            <div
+              className="card"
+              style={{
+                padding: 0,
+                overflow: 'hidden',
+                borderRadius: 'var(--radius-lg)',
+                border: '1px solid #cbd5e1',
+                boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)'
+              }}
+            >
+              <Editor
+                height={isHtmlCss ? '300px' : '360px'}
+                language={
+                  isSql
+                    ? 'sql'
+                    : isJs
+                    ? 'javascript'
+                    : isHtmlCss
+                    ? activeEditorTab === 'css'
+                      ? 'css'
+                      : 'html'
+                    : 'python'
                 }
-              }}
-              theme="vs-dark"
-              options={{
-                minimap: { enabled: false },
-                fontSize: 13,
-                lineNumbers: 'on',
-                scrollBeyondLastLine: false,
-                automaticLayout: true,
-                tabSize: 2,
-                wordWrap: 'on'
-              }}
-            />
-          </div>
+                value={isHtmlCss ? (activeEditorTab === 'css' ? cssCode : htmlCode) : code}
+                onChange={(value) => {
+                  if (isHtmlCss) {
+                    if (activeEditorTab === 'css') {
+                      setCssCode(value || '');
+                    } else {
+                      setHtmlCode(value || '');
+                    }
+                  } else {
+                    setCode(value || '');
+                  }
+                }}
+                theme="vs-dark"
+                options={{
+                  minimap: { enabled: false },
+                  fontSize: 13,
+                  lineNumbers: 'on',
+                  scrollBeyondLastLine: false,
+                  automaticLayout: true,
+                  tabSize: 2,
+                  wordWrap: 'on'
+                }}
+              />
+            </div>
+          )}
 
           {/* Live Preview Pane for HTML/CSS sandbox */}
           {isHtmlCss && (
