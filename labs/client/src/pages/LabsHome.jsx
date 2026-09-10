@@ -13,7 +13,8 @@ import {
   AlertCircle,
   RefreshCw,
   BookOpen,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Search
 } from 'lucide-react';
 import { getServiceInfo, getLabsList } from '../services/api';
 
@@ -24,7 +25,8 @@ const FILTERS = [
   { id: 'sql', label: 'SQL', icon: Database },
   { id: 'javascript', label: 'JavaScript', icon: Code2 },
   { id: 'html_css', label: 'HTML/CSS', icon: Globe },
-  { id: 'spreadsheet', label: 'Spreadsheet', icon: FileSpreadsheet }
+  { id: 'spreadsheet', label: 'Spreadsheet', icon: FileSpreadsheet },
+  { id: 'regex', label: 'Regex & Text', icon: Search }
 ];
 
 
@@ -65,6 +67,7 @@ export default function LabsHome() {
     if (activeFilter === 'javascript') return lab.type === 'js_sandbox';
     if (activeFilter === 'html_css') return lab.type === 'html_css_sandbox';
     if (activeFilter === 'spreadsheet') return lab.type === 'spreadsheet_sandbox';
+    if (activeFilter === 'regex') return lab.type === 'regex_sandbox';
     return true;
   });
 
@@ -74,6 +77,7 @@ export default function LabsHome() {
   const jsCount = labs.filter((l) => l.type === 'js_sandbox').length;
   const htmlCssCount = labs.filter((l) => l.type === 'html_css_sandbox').length;
   const spreadsheetCount = labs.filter((l) => l.type === 'spreadsheet_sandbox').length;
+  const regexCount = labs.filter((l) => l.type === 'regex_sandbox').length;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
@@ -336,6 +340,19 @@ export default function LabsHome() {
           >
             {spreadsheetCount} Spreadsheet Labs
           </div>
+          <div
+            style={{
+              background: '#faf5ff',
+              color: '#7e22ce',
+              fontSize: '0.78rem',
+              fontWeight: 700,
+              padding: '0.25rem 0.75rem',
+              borderRadius: '999px',
+              border: '1px solid #d8b4fe'
+            }}
+          >
+            {regexCount} Regex Labs
+          </div>
         </div>
       </div>
 
@@ -473,7 +490,8 @@ export default function LabsHome() {
               const isJs = lab.type === 'js_sandbox';
               const isHtmlCss = lab.type === 'html_css_sandbox';
               const isSpreadsheet = lab.type === 'spreadsheet_sandbox';
-              const Icon = isSql ? Database : isHtmlCss ? Globe : isSpreadsheet ? FileSpreadsheet : Code2;
+              const isRegex = lab.type === 'regex_sandbox';
+              const Icon = isSql ? Database : isHtmlCss ? Globe : isSpreadsheet ? FileSpreadsheet : isRegex ? Search : Code2;
               const typeLabel = isSql
                 ? 'SQL (SQLite WebAssembly)'
                 : isJs
@@ -482,11 +500,13 @@ export default function LabsHome() {
                 ? 'HTML/CSS (Live Preview Sandbox)'
                 : isSpreadsheet
                 ? 'Spreadsheet (Interactive Grid & Formulas)'
+                : isRegex
+                ? 'Regex & Text Processing (Live Highlighting)'
                 : 'Python 3.11 (Pyodide)';
-              const badgeColor = isSql ? '#ecfdf5' : isJs ? '#fefce8' : isHtmlCss ? '#f0fdfa' : isSpreadsheet ? '#f0fdf4' : '#f0f9ff';
-              const badgeBorder = isSql ? '#a7f3d0' : isJs ? '#fde047' : isHtmlCss ? '#99f6e4' : isSpreadsheet ? '#86efac' : '#bae6fd';
-              const badgeText = isSql ? '#065f46' : isJs ? '#b45309' : isHtmlCss ? '#0f766e' : isSpreadsheet ? '#166534' : '#0c4a6e';
-              const iconColor = isSql ? '#059669' : isJs ? '#d97706' : isHtmlCss ? '#0d9488' : isSpreadsheet ? '#15803d' : '#0284c7';
+              const badgeColor = isSql ? '#ecfdf5' : isJs ? '#fefce8' : isHtmlCss ? '#f0fdfa' : isSpreadsheet ? '#f0fdf4' : isRegex ? '#faf5ff' : '#f0f9ff';
+              const badgeBorder = isSql ? '#a7f3d0' : isJs ? '#fde047' : isHtmlCss ? '#99f6e4' : isSpreadsheet ? '#86efac' : isRegex ? '#d8b4fe' : '#bae6fd';
+              const badgeText = isSql ? '#065f46' : isJs ? '#b45309' : isHtmlCss ? '#0f766e' : isSpreadsheet ? '#166534' : isRegex ? '#7e22ce' : '#0c4a6e';
+              const iconColor = isSql ? '#059669' : isJs ? '#d97706' : isHtmlCss ? '#0d9488' : isSpreadsheet ? '#15803d' : isRegex ? '#9333ea' : '#0284c7';
 
 
               return (

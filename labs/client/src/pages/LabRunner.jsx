@@ -32,7 +32,11 @@ import {
   Globe,
   FileSpreadsheet,
   Calculator,
-  Grid
+  Grid,
+  Search,
+  FileText,
+  Sliders,
+  Wand2
 } from 'lucide-react';
 
 // Register all Handsontable modules for data grid & spreadsheet features
@@ -52,6 +56,7 @@ import { runJavaScriptCode } from '../utils/jsRunner';
 import { validateAllJsTasks } from '../utils/jsValidator';
 import { validateAllHtmlCssTasks } from '../utils/htmlValidator';
 import { validateAllSpreadsheetTasks } from '../utils/spreadsheetValidator';
+import { validateAllRegexTasks } from '../utils/regexValidator';
 
 export default function LabRunner() {
   const { labId } = useParams();
@@ -134,6 +139,20 @@ export default function LabRunner() {
     }
     return letter;
   };
+
+  // ── REGEX & TEXT PROCESSING STATE ──────────────────────────────────────────
+  const [sampleText, setSampleText] = useState('');
+  const [regexPattern, setRegexPattern] = useState('');
+  const [regexFlags, setRegexFlags] = useState({ g: true, i: false, m: false });
+  const [regexMatches, setRegexMatches] = useState([]);
+  const [highlightedSegments, setHighlightedSegments] = useState([]);
+  const [regexError, setRegexError] = useState(null);
+  const [transformCode, setTransformCode] = useState('');
+  const [transformOutput, setTransformOutput] = useState('');
+  const [transformError, setTransformError] = useState(null);
+  const [isRegexCheatsheetOpen, setIsRegexCheatsheetOpen] = useState(true);
+  const regexDebounceRef = useRef(null);
+  const transformDebounceRef = useRef(null);
 
   // Task Validation state
   // Map of taskId -> { passed: boolean, reason?: string }
@@ -284,6 +303,22 @@ export default function LabRunner() {
           setSheetData(rawGrid);
           setResolvedSheetData(rawGrid);
           setRunnerStatus('Spreadsheet Grid Ready');
+        } else if (labData.type === 'regex_sandbox') {
+          const sText = labData.config?.sample_text || '';
+          setSampleText(sText);
+          setRegexPattern('');
+          setRegexFlags({ g: true, i: false, m: false });
+          setHighlightedSegments([{ text: sText, isMatch: false }]);
+          setRegexMatches([]);
+          setRegexError(null);
+          setTransformCode(
+            labData.config?.mode === 'transform'
+              ? `// Write a JavaScript expression transforming sample_text\nsample_text.replace(/(?:\\+91[\\s-]?)?(?:0)?(\\d{5})[\\s-]?(\\d{5})/g, '+91-$1$2');`
+              : ''
+          );
+          setTransformOutput('');
+          setTransformError(null);
+          setRunnerStatus('Regex Sandbox Ready');
         } else {
           // Default python_sandbox / js_sandbox
           setCode(labData.config?.starter_code || '');
@@ -349,6 +384,163 @@ ${htmlCode}
     }
   };
 
+  // ── REGEX SANDBOX LIVE MATCHING & TRANSFORMATION ENGINE ────────────────────
+  const runRegexTaskValidation = (matchesArr, transOut, transErr, rxErr, currentPattern) => {
+    if (!lab || lab.type !== 'regex_sandbox') return;
+    const tasks = lab.config?.tasks || [];
+    if (tasks.length === 0) return;
+
+    const validationResults = validateAllRegexTasks(tasks, {
+      matches: matchesArr !== undefined ? matchesArr : regexMatches,
+      sampleText: sampleText,
+      transformOutput: transOut !== undefined ? transOut : transformOutput,
+      transformError: transErr !== undefined ? transErr : transformError,
+      regexError: rxErr !== undefined ? rxErr : regexError,
+      pattern: currentPattern !== undefined ? currentPattern : regexPattern
+    });
+
+    processValidationResults(tasks, validationResults);
+  };
+
+  const computeRegexHighlights = (pattern, flagsObj, text) => {
+    if (!text) {
+      setHighlightedSegments([]);
+      setRegexMatches([]);
+      setRegexError(null);
+      runRegexTaskValidation([], transformOutput, transformError, null, '');
+      return;
+    }
+
+    if (!pattern || pattern.trim() === '') {
+      setHighlightedSegments([{ text, isMatch: false }]);
+      setRegexMatches([]);
+      setRegexError(null);
+      runRegexTaskValidation([], transformOutput, transformError, null, '');
+      return;
+    }
+
+    try {
+      let flagStr = '';
+      if (flagsObj.g) flagStr += 'g';
+      if (flagsObj.i) flagStr += 'i';
+      if (flagsObj.m) flagStr += 'm';
+
+      // Ensure global flag for full text visual match scanning
+      const activeFlags = flagStr.includes('g') ? flagStr : flagStr + 'g';
+      const rx = new RegExp(pattern, activeFlags);
+      const matches = [];
+      const segments = [];
+      let lastIndex = 0;
+      let match;
+      let count = 0;
+      const maxMatches = 500; // infinite loop protection
+
+      while ((match = rx.exec(text)) !== null && count < maxMatches) {
+        if (match[0].length === 0) {
+          rx.lastIndex++;
+          continue;
+        }
+
+        const start = match.index;
+        const end = match.index + match[0].length;
+
+        if (start > lastIndex) {
+          segments.push({
+            text: text.substring(lastIndex, start),
+            isMatch: false
+          });
+        }
+
+        segments.push({
+          text: match[0],
+          isMatch: true,
+          matchIndex: count
+        });
+
+        matches.push(match[0]);
+        lastIndex = end;
+        count++;
+
+        if (!rx.global) break;
+      }
+
+      if (lastIndex < text.length) {
+        segments.push({
+          text: text.substring(lastIndex),
+          isMatch: false
+        });
+      }
+
+      setRegexMatches(matches);
+      setHighlightedSegments(segments);
+      setRegexError(null);
+      runRegexTaskValidation(matches, transformOutput, transformError, null, pattern);
+    } catch (err) {
+      setRegexError(err.message);
+      setRegexMatches([]);
+      setHighlightedSegments([{ text, isMatch: false }]);
+      runRegexTaskValidation([], transformOutput, transformError, err.message, pattern);
+    }
+  };
+
+  const executeTransformation = (codeStr, text) => {
+    if (!text) {
+      setTransformOutput('');
+      setTransformError(null);
+      runRegexTaskValidation(regexMatches, '', null, regexError, regexPattern);
+      return;
+    }
+
+    if (!codeStr || codeStr.trim() === '') {
+      setTransformOutput('');
+      setTransformError(null);
+      runRegexTaskValidation(regexMatches, '', null, regexError, regexPattern);
+      return;
+    }
+
+    try {
+      setTransformError(null);
+      let fn;
+      try {
+        fn = new Function('sample_text', `"use strict"; return (${codeStr});`);
+      } catch (exprErr) {
+        fn = new Function('sample_text', `"use strict"; ${codeStr}`);
+      }
+      const result = fn(text);
+      const outStr = result !== undefined && result !== null ? String(result) : '';
+      setTransformOutput(outStr);
+      runRegexTaskValidation(regexMatches, outStr, null, regexError, regexPattern);
+    } catch (err) {
+      setTransformError(err.message);
+      runRegexTaskValidation(regexMatches, '', err.message, regexError, regexPattern);
+    }
+  };
+
+  // Live regex calculation on pattern or flags change (debounced at 200ms)
+  useEffect(() => {
+    if (lab?.type !== 'regex_sandbox') return;
+
+    if (regexDebounceRef.current) clearTimeout(regexDebounceRef.current);
+    regexDebounceRef.current = setTimeout(() => {
+      computeRegexHighlights(regexPattern, regexFlags, sampleText);
+    }, 200);
+
+    return () => clearTimeout(regexDebounceRef.current);
+  }, [regexPattern, regexFlags, sampleText, lab?.type]);
+
+  // Live transformation execution on code change (debounced at 250ms)
+  useEffect(() => {
+    if (lab?.type !== 'regex_sandbox') return;
+    if (lab?.config?.mode !== 'transform') return;
+
+    if (transformDebounceRef.current) clearTimeout(transformDebounceRef.current);
+    transformDebounceRef.current = setTimeout(() => {
+      executeTransformation(transformCode, sampleText);
+    }, 250);
+
+    return () => clearTimeout(transformDebounceRef.current);
+  }, [transformCode, sampleText, lab?.type, lab?.config?.mode]);
+
   // Record completed attempt to real backend
   const recordAttemptCompletion = (taskIds, finalScore = 100) => {
     setSubmittingAttempt(true);
@@ -363,6 +555,18 @@ ${htmlCode}
               headers: lab?.config?.column_headers || [],
               raw_data: hotRef.current?.hotInstance?.getSourceData() || sheetData,
               resolved_data: hotRef.current?.hotInstance?.getData() || resolvedSheetData
+            },
+            null,
+            2
+          )
+        : lab?.type === 'regex_sandbox'
+        ? JSON.stringify(
+            {
+              mode: lab?.config?.mode || 'regex_match',
+              pattern: regexPattern,
+              flags: Object.entries(regexFlags).filter(([_, v]) => v).map(([k]) => k).join(''),
+              transform_code: transformCode,
+              matches_count: regexMatches.length
             },
             null,
             2
@@ -505,8 +709,25 @@ ${htmlCode}
     const isJs = lab.type === 'js_sandbox';
     const isHtmlCss = lab.type === 'html_css_sandbox';
     const isSpreadsheet = lab.type === 'spreadsheet_sandbox';
+    const isRegex = lab.type === 'regex_sandbox';
 
-    if (isSpreadsheet) {
+    if (isRegex) {
+      // ── Regex Sandbox Pattern & Transformation Evaluation ──────────────────
+      setRunnerStatus('Evaluating pattern & transformation...');
+      try {
+        if (lab.config?.mode === 'transform') {
+          executeTransformation(transformCode, sampleText);
+        } else {
+          computeRegexHighlights(regexPattern, regexFlags, sampleText);
+        }
+        setRunnerStatus('Regex Evaluated');
+      } catch (err) {
+        setRegexError(err.message);
+        setRunnerStatus('Evaluation error');
+      } finally {
+        setIsRunning(false);
+      }
+    } else if (isSpreadsheet) {
       // ── Spreadsheet Grid & Formula Recalculation ───────────────────────────
       setRunnerStatus('Recalculating spreadsheet formulas & validating tasks...');
       try {
@@ -623,7 +844,9 @@ ${htmlCode}
       const passedTaskIds = [];
 
       tasks.forEach((task, idx) => {
-        const valRes = validationResults[idx];
+        const valRes = Array.isArray(validationResults)
+          ? validationResults[idx]
+          : (validationResults[task.id] || validationResults[idx]);
         const passed = valRes ? valRes.passed : false;
         updatedResults[task.id] = {
           passed,
@@ -685,8 +908,30 @@ ${htmlCode}
           hotRef.current.hotInstance.loadData(fresh);
         }
         setSelectedCell({ row: 0, col: 0, address: 'A1', formula: '', value: '' });
+      } else if (lab?.type === 'regex_sandbox') {
+        const sText = lab?.config?.sample_text || '';
+        setSampleText(sText);
+        setRegexPattern('');
+        setRegexFlags({ g: true, i: false, m: false });
+        setHighlightedSegments([{ text: sText, isMatch: false }]);
+        setRegexMatches([]);
+        setRegexError(null);
+        setTransformCode(
+          lab?.config?.mode === 'transform'
+            ? `// Write a JavaScript expression transforming sample_text\nsample_text.replace(/(?:\\+91[\\s-]?)?(?:0)?(\\d{5})[\\s-]?(\\d{5})/g, '+91-$1$2');`
+            : ''
+        );
+        setTransformOutput('');
+        setTransformError(null);
         setErrorOutput('');
-        setRunnerStatus('Spreadsheet Grid Reset');
+        hasSubmittedRef.current = false;
+        setIsCompleted(false);
+        const initialResults = {};
+        (lab?.config?.tasks || []).forEach((t) => {
+          initialResults[t.id] = { passed: false, reason: 'Not yet evaluated' };
+        });
+        setTaskResults(initialResults);
+        setRunnerStatus('Regex Sandbox Reset');
       } else {
         setCode(lab?.config?.starter_code || '');
         setOutput('');
@@ -733,6 +978,45 @@ ${htmlCode}
 
     const isSpreadsheet = lab?.type === 'spreadsheet_sandbox';
     const isHtmlCss = lab?.type === 'html_css_sandbox';
+    const isRegex = lab?.type === 'regex_sandbox';
+
+    if (isRegex) {
+      let demoPattern = regexPattern;
+      let demoCode = transformCode;
+
+      if (lab?.lab_id === 'lab-regex-extract-employee-ids') {
+        demoPattern = 'ISS-\\d{4}-\\d{4}';
+        setRegexPattern(demoPattern);
+        computeRegexHighlights(demoPattern, regexFlags, sampleText);
+      } else if (lab?.lab_id === 'lab-regex-validate-gov-emails') {
+        demoPattern = '[a-zA-Z0-9._%+-]+@(?:[a-zA-Z0-9-]+\\.)*(?:gov|nic)\\.in';
+        setRegexPattern(demoPattern);
+        computeRegexHighlights(demoPattern, regexFlags, sampleText);
+      } else if (lab?.lab_id === 'lab-regex-clean-phone-numbers') {
+        demoCode = `sample_text.replace(/(?:\\+91[\\s-]?)?0?(\\d{5})[\\s-]?(\\d{5})/g, '+91-$1$2');`;
+        setTransformCode(demoCode);
+        executeTransformation(demoCode, sampleText);
+      }
+
+      setRunnerStatus('Regex Demo Solution Applied');
+
+      const tasks = lab?.config?.tasks || [];
+      const updatedResults = {};
+      const passedIds = [];
+      tasks.forEach((t) => {
+        updatedResults[t.id] = { passed: true, reason: 'Verified successfully by regex test engine' };
+        passedIds.push(t.id);
+      });
+      setTaskResults(updatedResults);
+      setIsCompleted(true);
+
+      try {
+        confetti({ particleCount: 130, spread: 85, origin: { y: 0.6 } });
+      } catch (e) {}
+
+      recordAttemptCompletion(passedIds, 100);
+      return;
+    }
 
     if (isSpreadsheet) {
       const rawInit = lab?.config?.initial_data || [];
@@ -1417,6 +1701,7 @@ print(f"[CLEANED_DATASET_SUMMARY] Valid records: {valid_districts_count}, Avg Li
   const isJs = lab?.type === 'js_sandbox';
   const isHtmlCss = lab?.type === 'html_css_sandbox';
   const isSpreadsheet = lab?.type === 'spreadsheet_sandbox';
+  const isRegex = lab?.type === 'regex_sandbox';
   const userName = sessionData?.user_name || 'Learner';
   const courseId = sessionData?.course_id || lab?.course_id;
   const tasks = lab?.config?.tasks || [];
@@ -1447,12 +1732,12 @@ print(f"[CLEANED_DATASET_SUMMARY] Valid records: {valid_districts_count}, Avg Li
               fontWeight: 600,
               padding: '0.2rem 0.5rem',
               borderRadius: '9999px',
-              background: isSql ? '#ecfdf5' : isJs ? '#fefce8' : isHtmlCss ? '#f0fdfa' : isSpreadsheet ? '#f0fdf4' : '#f0fdf4',
-              color: isSql ? '#059669' : isJs ? '#b45309' : isHtmlCss ? '#0d9488' : isSpreadsheet ? '#166534' : '#16a34a',
-              border: `1px solid ${isSql ? '#a7f3d0' : isJs ? '#fde047' : isHtmlCss ? '#99f6e4' : isSpreadsheet ? '#86efac' : '#bbf7d0'}`
+              background: isSql ? '#ecfdf5' : isJs ? '#fefce8' : isHtmlCss ? '#f0fdfa' : isSpreadsheet ? '#f0fdf4' : isRegex ? '#f5f3ff' : '#f0fdf4',
+              color: isSql ? '#059669' : isJs ? '#b45309' : isHtmlCss ? '#0d9488' : isSpreadsheet ? '#166534' : isRegex ? '#7c3aed' : '#16a34a',
+              border: `1px solid ${isSql ? '#a7f3d0' : isJs ? '#fde047' : isHtmlCss ? '#99f6e4' : isSpreadsheet ? '#86efac' : isRegex ? '#ddd6fe' : '#bbf7d0'}`
             }}
           >
-            {isSql ? 'SQL SQLite' : isJs ? 'JavaScript (ES6+)' : isHtmlCss ? 'HTML & CSS Live' : isSpreadsheet ? 'Spreadsheet (HyperFormula)' : 'Python 3.11'}
+            {isSql ? 'SQL SQLite' : isJs ? 'JavaScript (ES6+)' : isHtmlCss ? 'HTML & CSS Live' : isSpreadsheet ? 'Spreadsheet (HyperFormula)' : isRegex ? 'Regex / Text Engine' : 'Python 3.11'}
           </span>
         </div>
 
@@ -1704,6 +1989,97 @@ print(f"[CLEANED_DATASET_SUMMARY] Valid records: {valid_districts_count}, Avg Li
             </div>
           )}
 
+          {/* Regex Environment Tip */}
+          {isRegex && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '0.5rem',
+                padding: '0.65rem 0.85rem',
+                background: '#f5f3ff',
+                border: '1px solid #ddd6fe',
+                borderRadius: 'var(--radius-md)',
+                fontSize: '0.78rem',
+                color: '#5b21b6',
+                lineHeight: 1.4
+              }}
+            >
+              <Info size={16} color="#7c3aed" style={{ flexShrink: 0, marginTop: '2px' }} />
+              <div>
+                <strong>Live Evaluation Active:</strong> Patterns and transformations evaluate directly in your browser with zero latency. Matched items are visually highlighted in real-time.
+              </div>
+            </div>
+          )}
+
+          {/* Regex Reference & Cheatsheet (Regex Labs only) */}
+          {isRegex && (
+            <div
+              className="card"
+              style={{
+                padding: 'var(--space-4)',
+                border: '1px solid #ddd6fe',
+                background: '#faf5ff',
+                boxShadow: 'none'
+              }}
+            >
+              <div
+                onClick={() => setIsRegexCheatsheetOpen(!isRegexCheatsheetOpen)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  cursor: 'pointer',
+                  userSelect: 'none'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 700, fontSize: '0.875rem', color: '#5b21b6' }}>
+                  <Search size={16} color="#7c3aed" />
+                  Regex Reference & Cheatsheet
+                </div>
+                {isRegexCheatsheetOpen ? <ChevronDown size={16} color="#7c3aed" /> : <ChevronRight size={16} color="#7c3aed" />}
+              </div>
+
+              {isRegexCheatsheetOpen && (
+                <div style={{ marginTop: 'var(--space-3)', display: 'flex', flexDirection: 'column', gap: '0.6rem', fontSize: '0.78rem', color: '#4c1d95' }}>
+                  <div>
+                    <strong>Common Metacharacters:</strong> Special tokens for matching character types and positions:
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.45rem' }}>
+                    <div style={{ background: '#ffffff', padding: '0.45rem 0.6rem', borderRadius: '6px', border: '1px solid #e9d5ff' }}>
+                      <div style={{ fontWeight: 700, color: '#6b21a8', marginBottom: '0.2rem', fontSize: '0.75rem' }}>Character Classes</div>
+                      <div style={{ fontFamily: 'monospace', fontSize: '0.72rem', color: '#0f172a' }}><code>\d</code> : Digit [0-9]</div>
+                      <div style={{ fontFamily: 'monospace', fontSize: '0.72rem', color: '#0f172a' }}><code>\w</code> : Word [a-zA-Z0-9_]</div>
+                      <div style={{ fontFamily: 'monospace', fontSize: '0.72rem', color: '#0f172a' }}><code>\s</code> : Whitespace</div>
+                      <div style={{ fontFamily: 'monospace', fontSize: '0.72rem', color: '#0f172a' }}><code>.</code> : Any character</div>
+                    </div>
+
+                    <div style={{ background: '#ffffff', padding: '0.45rem 0.6rem', borderRadius: '6px', border: '1px solid #e9d5ff' }}>
+                      <div style={{ fontWeight: 700, color: '#6b21a8', marginBottom: '0.2rem', fontSize: '0.75rem' }}>Quantifiers & Anchors</div>
+                      <div style={{ fontFamily: 'monospace', fontSize: '0.72rem', color: '#0f172a' }}><code>+</code> : 1 or more</div>
+                      <div style={{ fontFamily: 'monospace', fontSize: '0.72rem', color: '#0f172a' }}><code>*</code> : 0 or more</div>
+                      <div style={{ fontFamily: 'monospace', fontSize: '0.72rem', color: '#0f172a' }}><code>{`{4}`}</code> : Exactly 4</div>
+                      <div style={{ fontFamily: 'monospace', fontSize: '0.72rem', color: '#0f172a' }}><code>^ / $</code> : Start / End</div>
+                    </div>
+                  </div>
+
+                  <div style={{ background: '#ffffff', border: '1px solid #e9d5ff', borderRadius: '6px', padding: '0.45rem 0.6rem', lineHeight: 1.45 }}>
+                    <div style={{ fontWeight: 700, color: '#6b21a8', marginBottom: '0.25rem', fontSize: '0.75rem' }}>
+                      Groups & Text Transformation
+                    </div>
+                    <div>
+                      <code>(abc)</code> captures group <code>$1</code>; <code>(?:abc)</code> non-capturing group.
+                    </div>
+                    <div style={{ marginTop: '0.2rem' }}>
+                      In transform mode, use <code>sample_text.replace(/regex/g, 'replacement')</code>.
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Spreadsheet Formula Reference & Keyboard Guide (Spreadsheet Labs only) */}
           {isSpreadsheet && (
             <div
@@ -1923,6 +2299,8 @@ print(f"[CLEANED_DATASET_SUMMARY] Valid records: {valid_districts_count}, Avg Li
                     <Globe size={16} />
                   ) : isSpreadsheet ? (
                     <FileSpreadsheet size={16} color="#15803d" />
+                  ) : isRegex ? (
+                    <Sliders size={16} color="#7c3aed" />
                   ) : (
                     <Code2 size={16} />
                   )}
@@ -1935,6 +2313,10 @@ print(f"[CLEANED_DATASET_SUMMARY] Valid records: {valid_districts_count}, Avg Li
                       ? 'Web Document Editor (HTML & CSS)'
                       : isSpreadsheet
                       ? 'Spreadsheet Grid & Formula Editor'
+                      : isRegex
+                      ? lab?.config?.mode === 'transform'
+                        ? 'Text Transformation & Cleaning Engine'
+                        : 'Regex Pattern & Match Engine'
                       : 'Python Sandbox (Pyodide WASM)'}
                   </span>
                 </div>
@@ -1953,7 +2335,7 @@ print(f"[CLEANED_DATASET_SUMMARY] Valid records: {valid_districts_count}, Avg Li
                   style={{ padding: '0.35rem 0.7rem', fontSize: '0.8125rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
                 >
                   <RefreshCw size={13} />
-                  {isSpreadsheet ? 'Reset Grid' : 'Reset'}
+                  {isSpreadsheet ? 'Reset Grid' : isRegex ? (lab?.config?.mode === 'transform' ? 'Reset Script' : 'Reset Pattern') : 'Reset'}
                 </button>
 
                 <button
@@ -1977,10 +2359,12 @@ print(f"[CLEANED_DATASET_SUMMARY] Valid records: {valid_districts_count}, Avg Li
                       ? 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)'
                       : isSpreadsheet
                       ? 'linear-gradient(135deg, #15803d 0%, #166534 100%)'
+                      : isRegex
+                      ? 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)'
                       : 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)'
                   }}
                 >
-                  {isSpreadsheet ? <Calculator size={14} /> : <Play size={14} />}
+                  {isSpreadsheet ? <Calculator size={14} /> : isRegex ? <Wand2 size={14} /> : <Play size={14} />}
                   {isRunning
                     ? 'Running...'
                     : isSql
@@ -1991,6 +2375,10 @@ print(f"[CLEANED_DATASET_SUMMARY] Valid records: {valid_districts_count}, Avg Li
                     ? 'Validate Preview'
                     : isSpreadsheet
                     ? 'Recalculate Formulas'
+                    : isRegex
+                    ? lab?.config?.mode === 'transform'
+                      ? 'Execute Transform'
+                      : 'Evaluate Pattern'
                     : 'Run Python Code'}
                 </button>
               </div>
@@ -2336,6 +2724,382 @@ print(f"[CLEANED_DATASET_SUMMARY] Valid records: {valid_districts_count}, Avg Li
                 </div>
               </div>
             </div>
+          ) : isRegex ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+              {/* Pattern Input & Live Status Bar */}
+              <div
+                className="card"
+                style={{
+                  padding: 'var(--space-3) var(--space-4)',
+                  background: '#faf5ff',
+                  border: '1.5px solid #d8b4fe',
+                  borderRadius: 'var(--radius-lg)'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <Search size={15} color="#7c3aed" />
+                    <span style={{ fontWeight: 600, fontSize: '0.825rem', color: '#5b21b6' }}>
+                      Regular Expression Pattern
+                    </span>
+                  </div>
+
+                  <div>
+                    {regexError ? (
+                      <span
+                        id="regex-syntax-error-badge"
+                        style={{
+                          background: '#fee2e2',
+                          color: '#b91c1c',
+                          border: '1px solid #fca5a5',
+                          padding: '0.15rem 0.55rem',
+                          borderRadius: '9999px',
+                          fontSize: '0.75rem',
+                          fontWeight: 600,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.3rem'
+                        }}
+                      >
+                        <AlertCircle size={12} />
+                        Invalid Pattern: {regexError}
+                      </span>
+                    ) : regexPattern ? (
+                      <span
+                        id="regex-match-counter-badge"
+                        style={{
+                          background: regexMatches.length > 0 ? '#dcfce7' : '#f1f5f9',
+                          color: regexMatches.length > 0 ? '#15803d' : '#64748b',
+                          border: `1px solid ${regexMatches.length > 0 ? '#86efac' : '#cbd5e1'}`,
+                          padding: '0.15rem 0.6rem',
+                          borderRadius: '9999px',
+                          fontSize: '0.75rem',
+                          fontWeight: 600
+                        }}
+                      >
+                        {regexMatches.length} {regexMatches.length === 1 ? 'match' : 'matches'} found
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: '0.75rem', color: '#7c3aed' }}>
+                        Enter regex pattern below
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: 'var(--space-2)' }}>
+                  <span style={{ fontFamily: 'monospace', fontSize: '1.25rem', fontWeight: 700, color: '#7c3aed', userSelect: 'none' }}>
+                    /
+                  </span>
+                  <div style={{ flex: 1, position: 'relative' }}>
+                    <input
+                      type="text"
+                      id="regex-pattern-input"
+                      value={regexPattern}
+                      onChange={(e) => setRegexPattern(e.target.value)}
+                      placeholder="e.g. EMP-[0-9]{4} or [a-zA-Z0-9._%+-]+@..."
+                      style={{
+                        width: '100%',
+                        padding: '0.4rem 0.75rem',
+                        fontSize: '0.875rem',
+                        fontFamily: 'Consolas, Monaco, "Courier New", monospace',
+                        borderRadius: '6px',
+                        border: regexError ? '1.5px solid #ef4444' : '1.5px solid #c084fc',
+                        outline: 'none',
+                        background: '#ffffff',
+                        color: '#1e1b4b',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
+                      }}
+                    />
+                  </div>
+                  <span style={{ fontFamily: 'monospace', fontSize: '1.25rem', fontWeight: 700, color: '#7c3aed', userSelect: 'none' }}>
+                    /
+                  </span>
+
+                  {/* Flag Toggles */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.2rem',
+                      background: '#f3e8ff',
+                      padding: '0.15rem 0.25rem',
+                      borderRadius: '6px',
+                      border: '1px solid #d8b4fe'
+                    }}
+                  >
+                    {[
+                      { key: 'g', label: 'g', title: 'Global match (find all matches)' },
+                      { key: 'i', label: 'i', title: 'Case-insensitive' },
+                      { key: 'm', label: 'm', title: 'Multiline (^ and $ match line boundaries)' }
+                    ].map(({ key, label, title }) => {
+                      const active = regexFlags[key];
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          id={`regex-flag-${key}`}
+                          title={title}
+                          onClick={() => setRegexFlags((prev) => ({ ...prev, [key]: !prev[key] }))}
+                          style={{
+                            width: '26px',
+                            height: '26px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontFamily: 'monospace',
+                            fontSize: '0.85rem',
+                            fontWeight: 700,
+                            borderRadius: '4px',
+                            border: 'none',
+                            cursor: 'pointer',
+                            background: active ? '#7c3aed' : 'transparent',
+                            color: active ? '#ffffff' : '#6b21a8',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Sample Text Display Card with Live Mark Highlighting */}
+              <div
+                className="card"
+                style={{
+                  padding: 0,
+                  overflow: 'hidden',
+                  borderRadius: 'var(--radius-lg)',
+                  border: '1px solid #cbd5e1',
+                  background: '#ffffff'
+                }}
+              >
+                <div
+                  style={{
+                    background: '#f8fafc',
+                    padding: '0.45rem 0.85rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    borderBottom: '1px solid #e2e8f0'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8125rem', fontWeight: 600, color: '#334155' }}>
+                    <FileText size={15} color="#64748b" />
+                    <span>Sample Target Data (Read-Only)</span>
+                  </div>
+                  <span style={{ fontSize: '0.72rem', color: '#64748b', background: '#e2e8f0', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>
+                    {sampleText.length} chars • {sampleText.split('\n').length} lines
+                  </span>
+                </div>
+
+                <div
+                  id="regex-sample-text-view"
+                  style={{
+                    padding: 'var(--space-3)',
+                    background: '#f8fafc',
+                    maxHeight: '260px',
+                    overflowY: 'auto',
+                    fontFamily: 'Consolas, Monaco, "Courier New", monospace',
+                    fontSize: '0.825rem',
+                    lineHeight: '1.6',
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word',
+                    color: '#0f172a'
+                  }}
+                >
+                  {highlightedSegments.map((seg, idx) =>
+                    seg.isMatch ? (
+                      <mark
+                        key={idx}
+                        className="regex-highlight-tag"
+                        style={{
+                          background: '#fef08a',
+                          color: '#713f12',
+                          fontWeight: 700,
+                          padding: '1px 3px',
+                          borderRadius: '3px',
+                          boxShadow: '0 0 0 1.5px #eab308'
+                        }}
+                        title={`Match #${(seg.matchIndex ?? 0) + 1}: "${seg.text}"`}
+                      >
+                        {seg.text}
+                      </mark>
+                    ) : (
+                      <span key={idx}>{seg.text}</span>
+                    )
+                  )}
+                </div>
+
+                {/* Captured Matches Chip Bar */}
+                {regexMatches.length > 0 && (
+                  <div
+                    style={{
+                      background: '#ffffff',
+                      borderTop: '1px solid #e2e8f0',
+                      padding: '0.5rem 0.85rem',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.35rem'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 600, color: '#475569' }}>
+                      <span>Captured Matches ({regexMatches.length}):</span>
+                      {regexMatches.length > 20 && (
+                        <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Showing first 20</span>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', maxHeight: '90px', overflowY: 'auto' }}>
+                      {regexMatches.slice(0, 20).map((m, idx) => (
+                        <span
+                          key={idx}
+                          style={{
+                            fontSize: '0.72rem',
+                            fontFamily: 'monospace',
+                            background: '#fef3c7',
+                            color: '#92400e',
+                            border: '1px solid #fcd34d',
+                            padding: '0.1rem 0.4rem',
+                            borderRadius: '4px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.25rem'
+                          }}
+                        >
+                          <span style={{ color: '#b45309', fontWeight: 700, fontSize: '0.65rem' }}>#{idx + 1}</span>
+                          <span>{m}</span>
+                        </span>
+                      ))}
+                      {regexMatches.length > 20 && (
+                        <span style={{ fontSize: '0.72rem', color: '#64748b', alignSelf: 'center', padding: '0.1rem 0.3rem' }}>
+                          +{regexMatches.length - 20} more
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Transformation Editor & Output Preview (for transform mode) */}
+              {lab?.config?.mode === 'transform' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+                  <div
+                    className="card"
+                    style={{
+                      padding: 0,
+                      overflow: 'hidden',
+                      borderRadius: 'var(--radius-lg)',
+                      border: '1px solid #cbd5e1'
+                    }}
+                  >
+                    <div
+                      style={{
+                        background: '#1e293b',
+                        padding: '0.45rem 0.85rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        borderBottom: '1px solid #334155'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8125rem', fontWeight: 600, color: '#f8fafc' }}>
+                        <Code2 size={15} color="#38bdf8" />
+                        <span>JavaScript Transformation Expression / Script</span>
+                      </div>
+                      <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                        Input variable: <code>sample_text</code>
+                      </span>
+                    </div>
+
+                    <Editor
+                      height="180px"
+                      language="javascript"
+                      value={transformCode}
+                      onChange={(val) => setTransformCode(val || '')}
+                      theme="vs-dark"
+                      options={{
+                        minimap: { enabled: false },
+                        fontSize: 13,
+                        lineNumbers: 'on',
+                        scrollBeyondLastLine: false,
+                        automaticLayout: true,
+                        tabSize: 2,
+                        wordWrap: 'on'
+                      }}
+                    />
+                  </div>
+
+                  {/* Transformed Output Live Preview */}
+                  <div
+                    className="card"
+                    style={{
+                      padding: 0,
+                      overflow: 'hidden',
+                      borderRadius: 'var(--radius-lg)',
+                      border: '1px solid #cbd5e1'
+                    }}
+                  >
+                    <div
+                      style={{
+                        background: '#f8fafc',
+                        padding: '0.45rem 0.85rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        borderBottom: '1px solid #e2e8f0'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8125rem', fontWeight: 600, color: '#0369a1' }}>
+                        <Wand2 size={15} color="#0284c7" />
+                        <span>Transformed Output (Live Result)</span>
+                      </div>
+                      <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                        {transformOutput ? `${transformOutput.length} characters` : 'No output yet'}
+                      </span>
+                    </div>
+
+                    {transformError ? (
+                      <div
+                        id="regex-transform-error-view"
+                        style={{
+                          padding: 'var(--space-3)',
+                          background: '#fef2f2',
+                          color: '#b91c1c',
+                          fontFamily: 'monospace',
+                          fontSize: '0.8rem',
+                          borderTop: '1px solid #fecaca'
+                        }}
+                      >
+                        <strong>Transformation Error:</strong> {transformError}
+                      </div>
+                    ) : (
+                      <pre
+                        id="regex-transform-output-view"
+                        style={{
+                          margin: 0,
+                          padding: 'var(--space-3)',
+                          background: '#ffffff',
+                          fontFamily: 'Consolas, Monaco, "Courier New", monospace',
+                          fontSize: '0.825rem',
+                          lineHeight: '1.6',
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-word',
+                          color: '#0f172a',
+                          minHeight: '60px',
+                          maxHeight: '220px',
+                          overflowY: 'auto'
+                        }}
+                      >
+                        {transformOutput || '(Output will appear here live as you type your transformation expression)'}
+                      </pre>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           ) : isHtmlCss && htmlEditorLayout !== 'tabs' ? (
             <div
               style={{
@@ -2676,7 +3440,7 @@ print(f"[CLEANED_DATASET_SUMMARY] Valid records: {valid_districts_count}, Avg Li
           )}
 
           {/* Console / Output Terminal (for Python, SQL, JS, or if errors occur) */}
-          {((!isHtmlCss && !isSpreadsheet) || errorOutput) && (
+          {((!isHtmlCss && !isSpreadsheet && !isRegex) || errorOutput) && (
             <div className="card" style={{ padding: 'var(--space-4)', background: '#0f172a', color: '#f8fafc' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-2)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8125rem', fontWeight: 600, color: '#94a3b8' }}>

@@ -42,7 +42,7 @@ const labSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['python_sandbox', 'sql_sandbox', 'js_sandbox', 'html_css_sandbox', 'spreadsheet_sandbox'],
+    enum: ['python_sandbox', 'sql_sandbox', 'js_sandbox', 'html_css_sandbox', 'spreadsheet_sandbox', 'regex_sandbox'],
     required: true
   },
   course_title: {
@@ -91,6 +91,16 @@ const labSchema = new mongoose.Schema({
       type: String,
       trim: true
     }],
+    // For regex_sandbox:
+    sample_text: {
+      type: String,
+      default: ''
+    },
+    mode: {
+      type: String,
+      enum: ['regex_match', 'transform'],
+      default: 'regex_match'
+    },
     // Shared:
     instructions: {
       type: String,

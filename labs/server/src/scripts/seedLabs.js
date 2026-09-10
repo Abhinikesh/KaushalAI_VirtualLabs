@@ -1256,6 +1256,171 @@ Regional directors monitor fund absorption rates to measure public scheme effici
         }
       ]
     }
+  },
+  {
+    lab_id: 'lab-regex-extract-employee-ids',
+    title: 'Personnel Registry: Extract Official Cadre Service IDs',
+    description: 'Extract valid Indian Statistical Service (ISS) officer registration codes from administrative transfer notifications using regular expressions.',
+    type: 'regex_sandbox',
+    course_title: 'Data Entry, Verification & Office Automation',
+    competency_tags: ['Data Entry & Validation', 'Document Handling', 'Text Processing', 'Regular Expressions'],
+    is_active: true,
+    config: {
+      mode: 'regex_match',
+      sample_text: `OFFICIAL ORDER NO. 42/2026:
+The following statistical officers have been deputed for field survey oversight:
+1. Shri Rajesh Kumar (Cadre ID: ISS-2016-0842) transferred to Division A.
+2. Smt. Priya Sharma (Registration: ISS-2019-1044) will report to Regional HQ.
+3. Assistant Director Mohan Lal (ISS-2012-0315) assigned to sampling audit.
+4. Field Inspector Anita Sen (ISS-2021-0089) designated as nodal officer.
+
+NOTE FOR VERIFICATION:
+Please ignore temporary batch codes such as ISS-99-12, DEP-2020-0411, and malformed entries like ISS-2023-ABC or ISS-2018-12.`,
+      instructions: `### Lab Objective: Extract Official Cadre Registration Codes
+
+In government administrative records, personnel registration identifiers follow strict departmental numbering schemes. In this lab, you will formulate a regular expression to extract all authentic Indian Statistical Service (ISS) cadre IDs from an administrative notification while rejecting invalid and temporary codes.
+
+#### Target Format:
+- Begins with \`ISS-\`
+- Followed by a 4-digit recruitment year (\`\\d{4}\`)
+- Followed by a hyphen (\`-\`)
+- Followed by a 4-digit sequence number (\`\\d{4}\`)
+
+#### Tasks:
+1. **Match All Valid IDs**: Write a regex that successfully matches all 4 genuine Cadre IDs (\`ISS-2016-0842\`, \`ISS-2019-1044\`, \`ISS-2012-0315\`, \`ISS-2021-0089\`).
+2. **Precision Check**: Ensure the regex does NOT match invalid or non-standard entries (\`ISS-99-12\`, \`DEP-2020-0411\`, \`ISS-2023-ABC\`, \`ISS-2018-12\`).
+3. **Total Match Count**: Ensure the pattern matches exactly 4 items across the entire document.`,
+      tasks: [
+        {
+          id: 'task_match_valid_ids',
+          description: 'Match all 4 valid Cadre IDs in format ISS-YYYY-NNNN',
+          validation_type: 'regex_matches_all',
+          validation_config: {
+            expected_matches: ['ISS-2016-0842', 'ISS-2019-1044', 'ISS-2012-0315', 'ISS-2021-0089']
+          }
+        },
+        {
+          id: 'task_reject_invalid_ids',
+          description: 'Do not match partial or invalid IDs (e.g. ISS-99-12, DEP-2020-0411, ISS-2023-ABC)',
+          validation_type: 'regex_matches_none',
+          validation_config: {
+            disallowed_matches: ['ISS-99-12', 'DEP-2020-0411', 'ISS-2023-ABC', 'ISS-2018-12']
+          }
+        },
+        {
+          id: 'task_count_cadre_matches',
+          description: 'Pattern produces exactly 4 total matches across the document',
+          validation_type: 'regex_match_count_equals',
+          validation_config: {
+            expected_count: 4
+          }
+        }
+      ]
+    }
+  },
+  {
+    lab_id: 'lab-regex-validate-gov-emails',
+    title: 'Data Cleaning: Validate Official Government Email Formats',
+    description: 'Audit citizen grievance correspondence records to isolate authentic official government email addresses and reject malformed submissions.',
+    type: 'regex_sandbox',
+    course_title: 'Data Entry, Verification & Office Automation',
+    competency_tags: ['Data Entry & Validation', 'Email Verification', 'Document Handling', 'IT & Digital Skills'],
+    is_active: true,
+    config: {
+      mode: 'regex_match',
+      sample_text: `Official Communications Directory:
+- Desk Officer: suresh.patel@nic.in
+- Statistical Division: ananya.sharma@upsdc.gov.in
+- Planning Unit: direct.audit@mospi.gov.in
+- Central Monitoring: rajesh.kumar@gov.in
+
+Rejected Submissions:
+- malformed: user@gov..in
+- missing domain: priya.nair@
+- invalid prefix: @nic.in
+- double at: officer@@gov.in
+- wrong extension: test.user@nic.com`,
+      instructions: `### Lab Objective: Government Email Format Validation
+
+Official e-governance platforms require validating government communications against authorized domains (\`nic.in\`, \`gov.in\`, or subdomains like \`*.gov.in\`). In this lab, you will craft a regular expression that filters authentic official addresses and excludes malformed entries.
+
+#### Tasks:
+1. **Match Authentic Government Emails**: Write a regex that matches the 4 official email addresses (\`suresh.patel@nic.in\`, \`ananya.sharma@upsdc.gov.in\`, \`direct.audit@mospi.gov.in\`, \`rajesh.kumar@gov.in\`).
+2. **Exclude Malformed Submissions**: Ensure your pattern rejects malformed entries such as \`user@gov..in\`, \`priya.nair@\`, \`@nic.in\`, \`officer@@gov.in\`, and \`test.user@nic.com\`.
+3. **Exact Total Count**: Verify that the expression matches exactly 4 valid addresses in the sample directory.`,
+      tasks: [
+        {
+          id: 'task_match_valid_emails',
+          description: 'Match all 4 genuine official government email addresses',
+          validation_type: 'regex_matches_all',
+          validation_config: {
+            expected_matches: ['suresh.patel@nic.in', 'ananya.sharma@upsdc.gov.in', 'direct.audit@mospi.gov.in', 'rajesh.kumar@gov.in']
+          }
+        },
+        {
+          id: 'task_reject_malformed_emails',
+          description: 'Reject malformed entries (user@gov..in, priya.nair@, @nic.in, test.user@nic.com)',
+          validation_type: 'regex_matches_none',
+          validation_config: {
+            disallowed_matches: ['user@gov..in', 'priya.nair@', '@nic.in', 'officer@@gov.in', 'test.user@nic.com']
+          }
+        },
+        {
+          id: 'task_count_valid_emails',
+          description: 'Ensure pattern matches exactly 4 official email addresses in the directory',
+          validation_type: 'regex_match_count_equals',
+          validation_config: {
+            expected_count: 4
+          }
+        }
+      ]
+    }
+  },
+  {
+    lab_id: 'lab-regex-clean-phone-numbers',
+    title: 'Citizen Registry: Standardize Inconsistent Contact Phone Numbers',
+    description: 'Standardize unformatted citizen phone numbers with varying spacing, punctuation, and dialing prefixes into uniform +91-XXXXXXXXXX format.',
+    type: 'regex_sandbox',
+    course_title: 'Data Entry, Verification & Office Automation',
+    competency_tags: ['Data Entry & Validation', 'Text Transformation', 'Data Cleaning', 'Document Handling'],
+    is_active: true,
+    config: {
+      mode: 'transform',
+      sample_text: `Citizen Contact List:
+1. Aarav Sharma: +91 98765-43210
+2. Kavita Rao: 09812345678
+3. Vikram Sen: 98765 12345
+4. Neha Gupta: +919823456789`,
+      instructions: `### Lab Objective: Clean and Normalize Citizen Phone Numbers
+
+Citizen registry databases ingest phone numbers in diverse formats with inconsistent spacing, hyphens, and leading zeros. In this lab, you will write a JavaScript text transformation using \`.replace()\` with regular expressions to normalize all 10-digit mobile numbers into the official standard format \`+91-XXXXXXXXXX\`.
+
+#### Expected Standard Format:
+\`+91-\` followed by the 10 numeric digits without internal spaces or dashes (e.g., \`+91-9876543210\`).
+
+#### Tasks:
+1. **Normalize All Phone Numbers**: Transform \`sample_text\` so all 4 contact records display the uniform \`+91-XXXXXXXXXX\` format.
+2. **Output Pattern Verification**: Verify that the transformed output contains exactly 4 standardized entries matching \`+91-XXXXXXXXXX\`.`,
+      tasks: [
+        {
+          id: 'task_normalize_all_numbers',
+          description: 'Normalize all 4 phone numbers into uniform +91-XXXXXXXXXX format',
+          validation_type: 'transform_output_equals',
+          validation_config: {
+            expected_output: `Citizen Contact List:\n1. Aarav Sharma: +91-9876543210\n2. Kavita Rao: +91-9812345678\n3. Vikram Sen: +91-9876512345\n4. Neha Gupta: +91-9823456789`
+          }
+        },
+        {
+          id: 'task_count_normalized',
+          description: 'Verify the transformed output contains exactly 4 numbers starting with "+91-" followed by 10 digits',
+          validation_type: 'regex_match_count_equals',
+          validation_config: {
+            pattern: '\\+91-\\d{10}',
+            expected_count: 4
+          }
+        }
+      ]
+    }
   }
 ];
 
