@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { Terminal, ShieldCheck, RefreshCw, Layers } from 'lucide-react';
 import { checkHealth } from '../services/api';
 
+import logoImg from '../assets/logo.png';
+
 export default function Header() {
   const [backendStatus, setBackendStatus] = useState('checking'); // 'checking' | 'online' | 'offline'
 
@@ -36,15 +38,16 @@ export default function Header() {
   return (
     <header className="header-container">
       <div className="header-content">
-        <Link to="/" className="header-brand">
-          <div className="brand-logo-icon">
-            <Terminal size={20} strokeWidth={2.5} />
-          </div>
+        <Link to="/" className="header-brand" title="KaushalLab Virtual Labs Workbench">
+          <img
+            src={logoImg}
+            alt="KaushalLab Logo"
+            className="brand-logo-img"
+          />
           <div className="brand-text-container">
-            <div className="brand-title">
-              KaushalAI
-              <span className="badge-labs">Virtual Labs</span>
-            </div>
+            <span className="badge-labs" style={{ width: 'fit-content' }}>
+              Virtual Labs
+            </span>
             <span className="brand-subtitle">Interactive Execution Environment</span>
           </div>
         </Link>
