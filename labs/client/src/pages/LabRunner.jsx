@@ -43,6 +43,7 @@ import {
 registerAllModules();
 import {
   verifyLabSession,
+  getStandaloneSessionToken,
   getLabDetails,
   startLabAttempt,
   completeLabAttempt,
@@ -201,11 +202,37 @@ export default function LabRunner() {
       }
 
       if (!token) {
-        if (isMounted) {
-          setAuthStatus('denied');
-          setErrorMessage('Access Denied — please launch this lab from the KaushalAI course page.');
+        // Independent / Standalone Mode:
+        // Automatically request a standalone practice session token
+        try {
+          const standaloneRes = await getStandaloneSessionToken(labId, 'Practice Learner');
+          if (standaloneRes?.token && isMounted) {
+            token = standaloneRes.token;
+            try {
+              sessionStorage.setItem(LAB_TOKEN_STORAGE_KEY, token);
+            } catch (e) {}
+            setSessionData(standaloneRes.session || {
+              user_id: 'learner_standalone',
+              user_name: 'Practice Learner',
+              lab_id: labId,
+              course_context: 'Independent Practice'
+            });
+            setAuthStatus('verified');
+            return;
+          }
+        } catch (standaloneErr) {
+          console.warn('[LabRunner] Standalone token fetch failed, continuing in offline practice mode:', standaloneErr.message);
+          if (isMounted) {
+            setSessionData({
+              user_id: 'learner_local_practice',
+              user_name: 'Practice Learner',
+              lab_id: labId,
+              course_context: 'Independent Practice'
+            });
+            setAuthStatus('verified');
+            return;
+          }
         }
-        return;
       }
 
       try {
@@ -220,10 +247,27 @@ export default function LabRunner() {
           sessionStorage.removeItem(LAB_TOKEN_STORAGE_KEY);
         } catch (e) {}
 
-        setAuthStatus('denied');
-        setErrorMessage(
-          err.response?.data?.message || 'Your lab session has expired or is invalid — please return to the course page and click Start Lab again.'
-        );
+        // If previous token expired or invalid, seamlessly grant a fresh standalone session
+        try {
+          const fallbackRes = await getStandaloneSessionToken(labId, 'Practice Learner');
+          if (fallbackRes?.token) {
+            try {
+              sessionStorage.setItem(LAB_TOKEN_STORAGE_KEY, fallbackRes.token);
+            } catch (e) {}
+            setSessionData(fallbackRes.session);
+            setAuthStatus('verified');
+            return;
+          }
+        } catch (e) {}
+
+        // Fallback for offline environments:
+        setSessionData({
+          user_id: 'learner_local_practice',
+          user_name: 'Practice Learner',
+          lab_id: labId,
+          course_context: 'Independent Practice'
+        });
+        setAuthStatus('verified');
       }
     };
 

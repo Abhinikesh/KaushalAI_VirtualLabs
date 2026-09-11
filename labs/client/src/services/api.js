@@ -60,6 +60,15 @@ export const verifyLabSession = async (explicitToken = null) => {
   return response.data;
 };
 
+// Obtain standalone practice session token
+export const getStandaloneSessionToken = async (labId, userName = 'Practice Learner') => {
+  const response = await api.post('/api/lab-session/standalone-token', {
+    lab_id: labId,
+    user_name: userName
+  });
+  return response.data;
+};
+
 // List all active labs (catalog)
 export const getLabsList = async () => {
   const response = await api.get('/api/labs');

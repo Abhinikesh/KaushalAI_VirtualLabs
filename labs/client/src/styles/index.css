@@ -208,3 +208,127 @@ button {
 code, pre {
   font-family: var(--font-mono);
 }
+
+/* ── Modern Lab Card Styles ─────────────────────────────────────────── */
+.lab-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: var(--space-6);
+}
+
+@media (max-width: 640px) {
+  .lab-card-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.lab-card {
+  background: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 6px 16px rgba(0, 0, 0, 0.02);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.lab-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: transparent;
+  transition: background 0.2s ease;
+}
+
+.lab-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px -4px rgba(15, 23, 42, 0.08), 0 4px 12px -2px rgba(15, 23, 42, 0.03);
+  border-color: #cbd5e1;
+}
+
+.lab-card.type-python:hover::before { background: linear-gradient(90deg, #38bdf8, #2563eb); }
+.lab-card.type-sql:hover::before { background: linear-gradient(90deg, #34d399, #059669); }
+.lab-card.type-js:hover::before { background: linear-gradient(90deg, #fbbf24, #d97706); }
+.lab-card.type-html:hover::before { background: linear-gradient(90deg, #2dd4bf, #0d9488); }
+.lab-card.type-sheet:hover::before { background: linear-gradient(90deg, #4ade80, #16a34a); }
+.lab-card.type-regex:hover::before { background: linear-gradient(90deg, #c084fc, #9333ea); }
+
+.lab-card-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.4;
+  margin-bottom: 0.5rem;
+  transition: color 0.15s ease;
+}
+
+.lab-card:hover .lab-card-title {
+  color: var(--color-primary-600);
+}
+
+.lab-card-desc {
+  font-size: 0.875rem;
+  color: #475569;
+  line-height: 1.55;
+  margin-bottom: 1rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.btn-start-lab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.65rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: 10px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+  box-shadow: 0 2px 6px rgba(79, 70, 229, 0.25);
+  transition: all 0.2s ease;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+}
+
+.btn-start-lab:hover {
+  background: linear-gradient(135deg, #4338ca 0%, #3730a3 100%);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
+  transform: translateY(-1px);
+}
+
+.btn-start-lab:active {
+  transform: translateY(0);
+}
+
+/* Stat Tags */
+.stat-tag {
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 0.22rem 0.65rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  white-space: nowrap;
+}
+
+.stat-tag.python { background: #f0f9ff; color: #0369a1; border: 1px solid #bae6fd; }
+.stat-tag.sql { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+.stat-tag.js { background: #fefce8; color: #b45309; border: 1px solid #fde047; }
+.stat-tag.html { background: #f0fdfa; color: #0f766e; border: 1px solid #99f6e4; }
+.stat-tag.sheet { background: #f0fdf4; color: #166534; border: 1px solid #86efac; }
+.stat-tag.regex { background: #faf5ff; color: #7e22ce; border: 1px solid #d8b4fe; }
+

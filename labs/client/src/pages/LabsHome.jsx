@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Code2,
   Database,
@@ -7,14 +8,16 @@ import {
   Zap,
   ExternalLink,
   Layers,
-  Lock,
   Filter,
   Sparkles,
   AlertCircle,
   RefreshCw,
   BookOpen,
   FileSpreadsheet,
-  Search
+  Search,
+  Play,
+  Clock,
+  ArrowRight
 } from 'lucide-react';
 import { getServiceInfo, getLabsList } from '../services/api';
 
@@ -28,7 +31,6 @@ const FILTERS = [
   { id: 'spreadsheet', label: 'Spreadsheet', icon: FileSpreadsheet },
   { id: 'regex', label: 'Regex & Text', icon: Search }
 ];
-
 
 export default function LabsHome() {
   const [labs, setLabs] = useState([]);
@@ -71,7 +73,6 @@ export default function LabsHome() {
     return true;
   });
 
-
   const pythonCount = labs.filter((l) => l.type === 'python_sandbox').length;
   const sqlCount = labs.filter((l) => l.type === 'sql_sandbox').length;
   const jsCount = labs.filter((l) => l.type === 'js_sandbox').length;
@@ -81,74 +82,84 @@ export default function LabsHome() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
-      {/* ── Top Notice: KaushalAI Launch Flow Banner ──────────────────────── */}
+      {/* ── Top Notice: Active Standalone & Course Integration Banner ──────── */}
       <div
         style={{
-          background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
-          border: '1px solid #bfdbfe',
-          borderRadius: 'var(--radius-lg)',
-          padding: 'var(--space-4) var(--space-6)',
+          background: 'linear-gradient(135deg, #eff6ff 0%, #e0e7ff 100%)',
+          border: '1px solid #c7d2fe',
+          borderRadius: '16px',
+          padding: '1rem 1.5rem',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
-          gap: 'var(--space-4)',
-          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)'
+          gap: '1rem',
+          boxShadow: '0 2px 10px rgba(99, 102, 241, 0.08)'
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
           <div
             style={{
-              width: 38,
-              height: 38,
-              borderRadius: '50%',
-              background: '#3b82f6',
+              width: 40,
+              height: 40,
+              borderRadius: '10px',
+              background: 'linear-gradient(135deg, #4f46e5 0%, #3730a3 100%)',
               color: '#ffffff',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              flexShrink: 0
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(79, 70, 229, 0.3)'
             }}
           >
             <Sparkles size={20} />
           </div>
           <div>
-            <div style={{ fontWeight: 700, color: '#1e3a8a', fontSize: '0.95rem' }}>
-              Catalog Preview Mode
+            <div style={{ fontWeight: 700, color: '#1e1b4b', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span>Interactive Virtual Labs Active</span>
+              <span style={{ fontSize: '0.72rem', background: '#dcfce7', color: '#15803d', border: '1px solid #86efac', padding: '0.1rem 0.5rem', borderRadius: '999px', fontWeight: 600 }}>
+                ● Ready to Practice
+              </span>
             </div>
-            <div style={{ color: '#1e40af', fontSize: '0.875rem' }}>
-              Launch labs from your Learning Path on KaushalAI to access hands-on practice
+            <div style={{ color: '#4338ca', fontSize: '0.84rem', marginTop: '0.15rem' }}>
+              Launch any lab directly below to practice code execution, formulas, queries, and text validation in your browser.
             </div>
           </div>
         </div>
 
-        <a
-          href={`${mainAppUrl}/dashboard`}
-          className="btn btn-primary"
-          style={{
-            background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.45rem',
-            fontSize: '0.85rem',
-            fontWeight: 600,
-            textDecoration: 'none',
-            padding: '0.45rem 1rem'
-          }}
-        >
-          <span>Go to KaushalAI Learning Path</span>
-          <ExternalLink size={14} />
-        </a>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+          <a
+            href={`${mainAppUrl}/dashboard`}
+            className="btn btn-secondary"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              fontSize: '0.8125rem',
+              fontWeight: 600,
+              textDecoration: 'none',
+              padding: '0.45rem 0.85rem',
+              borderRadius: '8px',
+              border: '1px solid #c7d2fe',
+              background: '#ffffff',
+              color: '#3730a3'
+            }}
+          >
+            <BookOpen size={14} />
+            <span>KaushalAI Course Hub</span>
+            <ExternalLink size={12} color="#818cf8" />
+          </a>
+        </div>
       </div>
 
       {/* ── Hero Banner ──────────────────────────────────────────────────── */}
       <div
         style={{
           background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%)',
-          borderRadius: 'var(--radius-xl)',
-          padding: 'var(--space-8)',
+          borderRadius: '20px',
+          padding: '2rem 2.25rem',
           color: '#ffffff',
-          boxShadow: 'var(--shadow-lg)',
+          boxShadow: '0 10px 25px -5px rgba(15, 23, 42, 0.25)',
           position: 'relative',
           overflow: 'hidden'
         }}
@@ -158,8 +169,8 @@ export default function LabsHome() {
             position: 'absolute',
             top: -60,
             right: -60,
-            width: 220,
-            height: 220,
+            width: 260,
+            height: 260,
             borderRadius: '50%',
             background: 'radial-gradient(circle, rgba(99,102,241,0.35) 0%, transparent 70%)',
             pointerEvents: 'none'
@@ -173,23 +184,24 @@ export default function LabsHome() {
             gap: '0.5rem',
             background: 'rgba(255,255,255,0.12)',
             padding: '0.3rem 0.85rem',
-            borderRadius: 'var(--radius-full)',
+            borderRadius: '999px',
             fontSize: '0.78rem',
             fontWeight: 600,
-            marginBottom: 'var(--space-4)',
+            marginBottom: '1rem',
             border: '1px solid rgba(255,255,255,0.2)'
           }}
         >
-          <Sparkles size={14} color="#34d399" />
-          <span>Interactive Browser Sandboxes • Zero Backend Compute Overhead</span>
+          <Zap size={14} color="#fde047" />
+          <span>Zero Server Compute • Real-Time Client WebAssembly & Sandboxing</span>
         </div>
 
         <h1
           style={{
-            fontSize: '2.15rem',
+            fontSize: '2.1rem',
             fontWeight: 800,
             letterSpacing: '-0.025em',
-            marginBottom: 'var(--space-3)'
+            marginBottom: '0.75rem',
+            lineHeight: 1.25
           }}
         >
           KaushalAI Virtual Labs Workbench
@@ -198,14 +210,14 @@ export default function LabsHome() {
         <p
           style={{
             color: '#c7d2fe',
-            fontSize: '1rem',
-            maxWidth: '780px',
+            fontSize: '0.98rem',
+            maxWidth: '820px',
             lineHeight: 1.6,
             margin: 0
           }}
         >
-          Dedicated interactive coding sandbox environment for civil service personnel and statistical officers.
-          Runs Python (Pyodide) and SQL (SQLite) directly inside your browser via WebAssembly with automated task verification.
+          Dedicated interactive sandbox environment for government civil servants, data analysts, and technical personnel.
+          Execute Python (Pyodide), SQLite (WASM), modern JavaScript, HTML/CSS, Spreadsheets (Formulas), and Regex text cleaning directly with instant automated verification.
         </p>
 
         {/* Live System Metrics */}
@@ -213,35 +225,32 @@ export default function LabsHome() {
           style={{
             display: 'flex',
             flexWrap: 'wrap',
-            gap: 'var(--space-6)',
-            marginTop: 'var(--space-6)',
-            paddingTop: 'var(--space-6)',
+            gap: '1.5rem',
+            marginTop: '1.5rem',
+            paddingTop: '1.25rem',
             borderTop: '1px solid rgba(255,255,255,0.15)'
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem' }}>
             <Server size={16} color="#818cf8" />
             <span style={{ color: '#a5b4fc' }}>Backend API:</span>
-            <code style={{ background: 'rgba(0,0,0,0.3)', padding: '0.15rem 0.45rem', borderRadius: '4px', color: '#34d399' }}>
-              {serviceInfo ? `${serviceInfo.service} (v${serviceInfo.version})` : 'Online (Port 5001)'}
+            <code style={{ background: 'rgba(0,0,0,0.35)', padding: '0.15rem 0.5rem', borderRadius: '6px', color: '#34d399', fontWeight: 600 }}>
+              {serviceInfo ? `${serviceInfo.service} (Online)` : 'Connected (Port 5001)'}
             </code>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem' }}>
             <Globe size={16} color="#34d399" />
-            <span style={{ color: '#a5b4fc' }}>Main Platform:</span>
-            <a
-              href={`${mainAppUrl}/dashboard`}
-              style={{ color: '#93c5fd', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
-            >
-              KaushalAI <ExternalLink size={12} />
-            </a>
+            <span style={{ color: '#a5b4fc' }}>LMS Integration:</span>
+            <span style={{ color: '#93c5fd', fontWeight: 500 }}>
+              Dual SSO + Standalone Practice
+            </span>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem' }}>
             <Zap size={16} color="#fbbf24" />
-            <span style={{ color: '#a5b4fc' }}>Sandbox Engine:</span>
-            <span style={{ color: '#fde047', fontWeight: 600 }}>WebAssembly (Client-Side)</span>
+            <span style={{ color: '#a5b4fc' }}>Engines:</span>
+            <span style={{ color: '#fde047', fontWeight: 600 }}>6 Sandboxes Supported</span>
           </div>
         </div>
       </div>
@@ -250,119 +259,48 @@ export default function LabsHome() {
       <div
         className="card"
         style={{
-          padding: 'var(--space-4) var(--space-6)',
+          padding: '1rem 1.5rem',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
-          gap: 'var(--space-4)',
+          gap: '1rem',
           background: '#ffffff',
+          borderRadius: '16px',
           border: '1px solid #e2e8f0'
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-          <div style={{ background: '#eff6ff', padding: '0.45rem', borderRadius: '8px', display: 'flex' }}>
-            <BookOpen size={18} color="#3b82f6" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{ background: '#eff6ff', padding: '0.5rem', borderRadius: '10px', display: 'flex', color: '#3b82f6' }}>
+            <BookOpen size={20} />
           </div>
           <div>
-            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--color-primary-900)', lineHeight: 1 }}>
-              {labs.length} Available Sandbox Labs
+            <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--color-primary-900)', lineHeight: 1.1 }}>
+              {labs.length} Practical Sandbox Labs
             </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', fontWeight: 500 }}>
-              Live catalog populated directly from database
+            <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', fontWeight: 500 }}>
+              Curated hands-on modules ready for immediate execution
             </div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <div
-            style={{
-              background: '#eff6ff',
-              color: '#1d4ed8',
-              fontSize: '0.78rem',
-              fontWeight: 700,
-              padding: '0.25rem 0.75rem',
-              borderRadius: '999px',
-              border: '1px solid #bfdbfe'
-            }}
-          >
-            {pythonCount} Python Labs
-          </div>
-          <div
-            style={{
-              background: '#ecfdf5',
-              color: '#047857',
-              fontSize: '0.78rem',
-              fontWeight: 700,
-              padding: '0.25rem 0.75rem',
-              borderRadius: '999px',
-              border: '1px solid #a7f3d0'
-            }}
-          >
-            {sqlCount} SQL Labs
-          </div>
-          <div
-            style={{
-              background: '#fefce8',
-              color: '#b45309',
-              fontSize: '0.78rem',
-              fontWeight: 700,
-              padding: '0.25rem 0.75rem',
-              borderRadius: '999px',
-              border: '1px solid #fde047'
-            }}
-          >
-            {jsCount} JavaScript Labs
-          </div>
-          <div
-            style={{
-              background: '#f0fdfa',
-              color: '#0f766e',
-              fontSize: '0.78rem',
-              fontWeight: 700,
-              padding: '0.25rem 0.75rem',
-              borderRadius: '999px',
-              border: '1px solid #99f6e4'
-            }}
-          >
-            {htmlCssCount} HTML/CSS Labs
-          </div>
-          <div
-            style={{
-              background: '#f0fdf4',
-              color: '#166534',
-              fontSize: '0.78rem',
-              fontWeight: 700,
-              padding: '0.25rem 0.75rem',
-              borderRadius: '999px',
-              border: '1px solid #86efac'
-            }}
-          >
-            {spreadsheetCount} Spreadsheet Labs
-          </div>
-          <div
-            style={{
-              background: '#faf5ff',
-              color: '#7e22ce',
-              fontSize: '0.78rem',
-              fontWeight: 700,
-              padding: '0.25rem 0.75rem',
-              borderRadius: '999px',
-              border: '1px solid #d8b4fe'
-            }}
-          >
-            {regexCount} Regex Labs
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
+          <span className="stat-tag python">{pythonCount} Python</span>
+          <span className="stat-tag sql">{sqlCount} SQL</span>
+          <span className="stat-tag js">{jsCount} JavaScript</span>
+          <span className="stat-tag html">{htmlCssCount} HTML/CSS</span>
+          <span className="stat-tag sheet">{spreadsheetCount} Spreadsheet</span>
+          <span className="stat-tag regex">{regexCount} Regex & Text</span>
         </div>
       </div>
 
       {/* ── Filter Tabs + Catalog Grid ───────────────────────────────────── */}
       <div>
         {/* Filter Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-5)', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
             <Filter size={15} color="#64748b" />
-            <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#64748b' }}>Filter:</span>
+            <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#64748b' }}>Filter By:</span>
           </div>
           <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
             {FILTERS.map(({ id, label, icon: Icon }) => {
@@ -376,50 +314,49 @@ export default function LabsHome() {
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.35rem',
-                    padding: '0.35rem 0.85rem',
+                    padding: '0.4rem 0.9rem',
                     borderRadius: '999px',
                     border: isActive ? '1.5px solid #4f46e5' : '1.5px solid #e2e8f0',
                     background: isActive ? '#ede9fe' : '#ffffff',
-                    color: isActive ? '#4f46e5' : '#64748b',
+                    color: isActive ? '#4f46e5' : '#475569',
                     fontSize: '0.8125rem',
                     fontWeight: isActive ? 700 : 500,
                     cursor: 'pointer',
                     transition: 'all 0.15s ease'
                   }}
                 >
-                  <Icon size={13} />
+                  <Icon size={14} />
                   {label}
                 </button>
               );
             })}
           </div>
 
-          <span style={{ marginLeft: 'auto', fontSize: '0.8125rem', color: '#94a3b8', fontWeight: 500 }}>
-            {filteredLabs.length} lab{filteredLabs.length !== 1 ? 's' : ''} shown
+          <span style={{ marginLeft: 'auto', fontSize: '0.8125rem', color: '#64748b', fontWeight: 600 }}>
+            Showing {filteredLabs.length} of {labs.length} labs
           </span>
         </div>
 
         {/* Loading Skeleton */}
         {loading && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 'var(--space-5)' }}>
-            {[1, 2, 3, 4].map((i) => (
+          <div className="lab-card-grid">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
               <div
                 key={i}
-                className="card"
+                className="lab-card"
                 style={{
-                  padding: 'var(--space-6)',
-                  height: 240,
+                  height: 280,
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: 'var(--space-4)',
+                  gap: '1rem',
                   background: '#f8fafc',
                   border: '1px solid #e2e8f0'
                 }}
               >
-                <div style={{ width: '40%', height: 20, background: '#e2e8f0', borderRadius: 4 }} />
-                <div style={{ width: '75%', height: 24, background: '#e2e8f0', borderRadius: 4 }} />
-                <div style={{ width: '100%', height: 48, background: '#e2e8f0', borderRadius: 4 }} />
-                <div style={{ marginTop: 'auto', width: '100%', height: 38, background: '#e2e8f0', borderRadius: 6 }} />
+                <div style={{ width: '40%', height: 22, background: '#e2e8f0', borderRadius: 6 }} />
+                <div style={{ width: '80%', height: 26, background: '#e2e8f0', borderRadius: 6 }} />
+                <div style={{ width: '100%', height: 60, background: '#e2e8f0', borderRadius: 6 }} />
+                <div style={{ marginTop: 'auto', width: '100%', height: 42, background: '#e2e8f0', borderRadius: 10 }} />
               </div>
             ))}
           </div>
@@ -430,10 +367,11 @@ export default function LabsHome() {
           <div
             className="card"
             style={{
-              padding: 'var(--space-8)',
+              padding: '3rem 2rem',
               textAlign: 'center',
               border: '1px solid #fecaca',
-              background: '#fef2f2'
+              background: '#fef2f2',
+              borderRadius: '16px'
             }}
           >
             <div
@@ -446,22 +384,22 @@ export default function LabsHome() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                margin: '0 auto var(--space-3)'
+                margin: '0 auto 1rem'
               }}
             >
               <AlertCircle size={24} />
             </div>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#991b1b', marginBottom: '0.5rem' }}>
-              Failed to Load Labs Catalog
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#991b1b', marginBottom: '0.5rem' }}>
+              Failed to Connect to Backend Catalog
             </h3>
-            <p style={{ fontSize: '0.875rem', color: '#b91c1c', maxWidth: 500, margin: '0 auto var(--space-4)' }}>
+            <p style={{ fontSize: '0.875rem', color: '#b91c1c', maxWidth: 520, margin: '0 auto 1.25rem' }}>
               {error}
             </p>
             <button
               type="button"
               onClick={fetchLabsCatalog}
               className="btn btn-primary"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.875rem' }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.875rem', borderRadius: '8px' }}
             >
               <RefreshCw size={14} />
               Retry Connection
@@ -471,145 +409,166 @@ export default function LabsHome() {
 
         {/* Empty Filter State */}
         {!loading && !error && filteredLabs.length === 0 && (
-          <div className="card" style={{ padding: 'var(--space-10)', textAlign: 'center' }}>
-            <Layers size={36} color="#cbd5e1" style={{ display: 'block', margin: '0 auto var(--space-3)' }} />
-            <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#475569', marginBottom: '0.5rem' }}>
-              No labs found in this category
+          <div className="card" style={{ padding: '3rem 2rem', textAlign: 'center', borderRadius: '16px' }}>
+            <Layers size={36} color="#cbd5e1" style={{ display: 'block', margin: '0 auto 1rem' }} />
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--color-primary-900)' }}>
+              No labs found for filter "{activeFilter}"
             </h3>
-            <p style={{ fontSize: '0.875rem', color: '#94a3b8' }}>
-              Try selecting a different filter above.
+            <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', marginTop: '0.5rem' }}>
+              Select "All Labs" to view all available interactive sandboxes.
             </p>
+            <button
+              type="button"
+              onClick={() => setActiveFilter('all')}
+              className="btn btn-secondary"
+              style={{ marginTop: '1rem', borderRadius: '8px' }}
+            >
+              View All Labs
+            </button>
           </div>
         )}
 
-        {/* Lab Cards Grid */}
+        {/* ── Labs Cards Grid ────────────────────────────────────────────── */}
         {!loading && !error && filteredLabs.length > 0 && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 'var(--space-5)' }}>
+          <div className="lab-card-grid">
             {filteredLabs.map((lab) => {
               const isSql = lab.type === 'sql_sandbox';
               const isJs = lab.type === 'js_sandbox';
               const isHtmlCss = lab.type === 'html_css_sandbox';
               const isSpreadsheet = lab.type === 'spreadsheet_sandbox';
               const isRegex = lab.type === 'regex_sandbox';
-              const Icon = isSql ? Database : isHtmlCss ? Globe : isSpreadsheet ? FileSpreadsheet : isRegex ? Search : Code2;
-              const typeLabel = isSql
-                ? 'SQL (SQLite WebAssembly)'
+
+              const cardTypeClass = isSql
+                ? 'type-sql'
                 : isJs
-                ? 'JavaScript (Browser Sandbox)'
+                ? 'type-js'
                 : isHtmlCss
-                ? 'HTML/CSS (Live Preview Sandbox)'
+                ? 'type-html'
                 : isSpreadsheet
-                ? 'Spreadsheet (Interactive Grid & Formulas)'
+                ? 'type-sheet'
                 : isRegex
-                ? 'Regex & Text Processing (Live Highlighting)'
+                ? 'type-regex'
+                : 'type-python';
+
+              const Icon = isSql
+                ? Database
+                : isJs
+                ? Code2
+                : isHtmlCss
+                ? Globe
+                : isSpreadsheet
+                ? FileSpreadsheet
+                : isRegex
+                ? Search
+                : Code2;
+
+              const typeLabel = isSql
+                ? 'SQL (SQLite WASM)'
+                : isJs
+                ? 'JavaScript Sandbox'
+                : isHtmlCss
+                ? 'HTML/CSS Sandbox'
+                : isSpreadsheet
+                ? 'Spreadsheet & Formulas'
+                : isRegex
+                ? 'Regex & Text Processing'
                 : 'Python 3.11 (Pyodide)';
+
               const badgeColor = isSql ? '#ecfdf5' : isJs ? '#fefce8' : isHtmlCss ? '#f0fdfa' : isSpreadsheet ? '#f0fdf4' : isRegex ? '#faf5ff' : '#f0f9ff';
               const badgeBorder = isSql ? '#a7f3d0' : isJs ? '#fde047' : isHtmlCss ? '#99f6e4' : isSpreadsheet ? '#86efac' : isRegex ? '#d8b4fe' : '#bae6fd';
-              const badgeText = isSql ? '#065f46' : isJs ? '#b45309' : isHtmlCss ? '#0f766e' : isSpreadsheet ? '#166534' : isRegex ? '#7e22ce' : '#0c4a6e';
+              const badgeText = isSql ? '#065f46' : isJs ? '#b45309' : isHtmlCss ? '#0f766e' : isSpreadsheet ? '#166534' : isRegex ? '#7e22ce' : '#0369a1';
               const iconColor = isSql ? '#059669' : isJs ? '#d97706' : isHtmlCss ? '#0d9488' : isSpreadsheet ? '#15803d' : isRegex ? '#9333ea' : '#0284c7';
-
 
               return (
                 <div
                   key={lab.lab_id}
-                  className="card"
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                    padding: 'var(--space-6)',
-                    border: '1.5px dashed #cbd5e1',
-                    background: '#fafbfc',
-                    boxShadow: 'none',
-                    position: 'relative',
-                    overflow: 'hidden'
-                  }}
+                  className={`lab-card ${cardTypeClass}`}
                 >
-                  {/* Top-right locked preview tag */}
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: 12,
-                      right: 12,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.3rem',
-                      background: '#f1f5f9',
-                      border: '1px solid #e2e8f0',
-                      color: '#64748b',
-                      fontSize: '0.7rem',
-                      fontWeight: 600,
-                      padding: '0.2rem 0.55rem',
-                      borderRadius: '999px'
-                    }}
-                  >
-                    <Lock size={11} />
-                    <span>Locked Preview</span>
-                  </div>
-
                   <div>
-                    {/* Header: Icon and Type */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: 'var(--space-3)' }}>
-                      <div
-                        style={{
-                          background: badgeColor,
-                          border: `1px solid ${badgeBorder}`,
-                          padding: '0.4rem',
-                          borderRadius: '8px',
-                          display: 'flex'
-                        }}
-                      >
-                        <Icon size={18} color={iconColor} />
+                    {/* Header: Type and Metadata */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                        <div
+                          style={{
+                            background: badgeColor,
+                            border: `1px solid ${badgeBorder}`,
+                            padding: '0.35rem',
+                            borderRadius: '8px',
+                            display: 'flex'
+                          }}
+                        >
+                          <Icon size={16} color={iconColor} />
+                        </div>
+                        <span
+                          style={{
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            background: badgeColor,
+                            color: badgeText,
+                            border: `1px solid ${badgeBorder}`,
+                            padding: '0.15rem 0.5rem',
+                            borderRadius: '999px'
+                          }}
+                        >
+                          {typeLabel}
+                        </span>
                       </div>
-                      <span
-                        style={{
-                          fontSize: '0.75rem',
-                          fontWeight: 700,
-                          background: badgeColor,
-                          color: badgeText,
-                          border: `1px solid ${badgeBorder}`,
-                          padding: '0.2rem 0.55rem',
-                          borderRadius: '999px'
-                        }}
-                      >
-                        {typeLabel}
-                      </span>
+
+                      {/* Top Right Difficulty & Duration Badges */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <span
+                          style={{
+                            fontSize: '0.6875rem',
+                            fontWeight: 600,
+                            padding: '0.15rem 0.45rem',
+                            borderRadius: '999px',
+                            background: lab.difficulty === 'Intermediate' ? '#fffbeb' : '#f0fdf4',
+                            color: lab.difficulty === 'Intermediate' ? '#b45309' : '#15803d',
+                            border: lab.difficulty === 'Intermediate' ? '1px solid #fde68a' : '1px solid #bbf7d0'
+                          }}
+                        >
+                          {lab.difficulty || 'Beginner'}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: '0.6875rem',
+                            fontWeight: 500,
+                            padding: '0.15rem 0.45rem',
+                            borderRadius: '999px',
+                            background: '#f8fafc',
+                            color: '#64748b',
+                            border: '1px solid #e2e8f0',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.2rem'
+                          }}
+                        >
+                          <Clock size={10} />
+                          {lab.estimated_minutes || 15}m
+                        </span>
+                      </div>
                     </div>
 
-                    <h3
-                      style={{
-                        fontSize: '1.05rem',
-                        fontWeight: 700,
-                        color: 'var(--color-primary-900)',
-                        marginBottom: 'var(--space-2)'
-                      }}
-                    >
+                    <h3 className="lab-card-title">
                       {lab.title}
                     </h3>
 
-                    <p
-                      style={{
-                        fontSize: '0.85rem',
-                        color: 'var(--color-text-secondary)',
-                        lineHeight: 1.55,
-                        marginBottom: 'var(--space-4)'
-                      }}
-                    >
+                    <p className="lab-card-desc">
                       {lab.description}
                     </p>
 
                     {/* Competency tags */}
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginBottom: 'var(--space-5)' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginBottom: '1.25rem' }}>
                       {(lab.competency_tags || []).map((tag, idx) => (
                         <span
                           key={idx}
                           style={{
-                            fontSize: '0.72rem',
+                            fontSize: '0.7rem',
                             fontWeight: 500,
                             padding: '0.15rem 0.45rem',
-                            background: '#f1f5f9',
+                            background: '#f8fafc',
                             color: '#475569',
-                            borderRadius: '4px',
+                            borderRadius: '6px',
                             border: '1px solid #e2e8f0'
                           }}
                         >
@@ -619,37 +578,35 @@ export default function LabsHome() {
                     </div>
                   </div>
 
-                  {/* Card Footer: Launch instructions and link */}
-                  <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 'var(--space-4)' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                      <a
-                        href={`${mainAppUrl}/dashboard`}
-                        className="btn btn-secondary"
+                  {/* Card Footer: Direct Launch Button & Course reference */}
+                  <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '1rem', marginTop: 'auto' }}>
+                    <Link
+                      to={`/lab/${lab.lab_id}`}
+                      className="btn-start-lab"
+                    >
+                      <Play size={14} fill="currentColor" />
+                      <span>Start Lab</span>
+                      <ArrowRight size={14} />
+                    </Link>
+
+                    {lab.course_title && (
+                      <div
                         style={{
-                          width: '100%',
-                          padding: '0.55rem 1rem',
-                          fontSize: '0.85rem',
-                          fontWeight: 600,
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          gap: '0.45rem',
-                          textDecoration: 'none',
-                          background: '#ffffff',
-                          border: '1px solid #cbd5e1',
-                          color: '#475569'
+                          gap: '0.35rem',
+                          fontSize: '0.72rem',
+                          color: '#64748b',
+                          marginTop: '0.5rem',
+                          textAlign: 'center',
+                          lineHeight: 1.3
                         }}
                       >
-                        <Lock size={14} color="#64748b" />
-                        <span>Launch from KaushalAI</span>
-                        <ExternalLink size={12} color="#94a3b8" />
-                      </a>
-                      {lab.course_title && (
-                        <span style={{ fontSize: '0.72rem', color: '#64748b', textAlign: 'center', lineHeight: 1.4 }}>
-                          Unlocks after completing <strong>{lab.course_title}</strong>
-                        </span>
-                      )}
-                    </div>
+                        <BookOpen size={11} color="#94a3b8" />
+                        <span>Aligned with <strong>{lab.course_title}</strong></span>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
