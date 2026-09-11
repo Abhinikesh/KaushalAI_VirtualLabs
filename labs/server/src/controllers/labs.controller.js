@@ -31,7 +31,25 @@ async function getLabById(req, res, next) {
   try {
     const { labId } = req.params;
 
-    const lab = await Lab.findOne({ lab_id: labId, is_active: true }).lean();
+    const ALIAS_MAP = {
+      "lab-igot-crs-01": "lab-python-basics",
+      "lab-igot-crs-02": "lab-python-analytics",
+      "lab-igot-crs-03": "lab-sql-districts",
+      "lab-igot-crs-04": "lab-regex-validate-gov-emails",
+      "lab-igot-crs-05": "lab-sheet-data-cleanup",
+      "lab-igot-crs-06": "lab-sheet-payroll-formulas",
+      "lab-6a996d6d266163e0a9606c61": "lab-python-basics",
+      "lab-6a996d6d266163e0a9606c62": "lab-sql-employees",
+      "lab-6a996d6d266163e0a9606c63": "lab-python-analytics",
+      "lab-6a996d6d266163e0a9606c64": "lab-js-async-fetch",
+      "lab-6a996d6d266163e0a9606c67": "lab-js-arrays",
+      "lab-6a996d6d266163e0a9606c68": "lab-regex-validate-gov-emails",
+      "lab-6a996d6d266163e0a9606c69": "lab-python-analytics",
+      "lab-6a996d6d266163e0a9606c6a": "lab-python-basics"
+    };
+    const targetLabId = ALIAS_MAP[labId] || labId;
+
+    const lab = await Lab.findOne({ lab_id: targetLabId, is_active: true }).lean();
     if (!lab) {
       return res.status(404).json({
         error: 'NotFound',
