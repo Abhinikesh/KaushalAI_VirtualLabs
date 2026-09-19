@@ -1,0 +1,1307 @@
+/**
+ * staticLabs.js
+ *
+ * Embedded lab catalog – a mirror of the server seed data.
+ * Used as a fallback when the backend API is unreachable (e.g., production
+ * Vercel deployment without a live server). All execution engines
+ * (Python/Pyodide, SQLite/WASM, JavaScript, HTML/CSS, Spreadsheet, Regex)
+ * run 100% in-browser, so every lab works without any server.
+ */
+
+export const STATIC_LABS = [
+  // ─────────────────────────────────────────────────────────────────────────────
+  // PYTHON LABS
+  // ─────────────────────────────────────────────────────────────────────────────
+  {
+    lab_id: 'lab-python-basics',
+    title: 'Clean Official Statistical Microdata with Pandas',
+    description:
+      'Inspect district survey records, eliminate duplicate entries, drop missing values, and calculate summary literacy metrics using Pandas.',
+    type: 'python_sandbox',
+    course_title: 'Official Statistical Computing & Survey Analysis',
+    competency_tags: ['Python Data Manipulation', 'Microdata Cleaning', 'Statistical Aggregation'],
+    is_active: true,
+    config: {
+      expected_packages: ['pandas'],
+      instructions: `### Lab Objective: Microdata Cleansing & Validation
+
+In official statistics, raw administrative survey feeds often contain duplicate records and incomplete measurements. In this hands-on lab, you will use **Pandas** to clean a simulated district development dataset.
+
+#### Instructions:
+1. **Remove Duplicate Rows**: Inspect the DataFrame created from \`raw_survey_data\` and remove duplicate rows using \`df.drop_duplicates()\`. Store the resulting row count in variable \`cleaned_row_count\`.
+2. **Handle Missing Values**: Drop rows where \`population\` is missing (\`NaN\` / \`None\`) using \`df.dropna(subset=['population'])\`. Store the remaining count in \`valid_districts_count\`.
+3. **Compute Metric**: Calculate the mean literacy rate across the cleaned records and assign it to \`average_literacy\`.
+4. **Print Summary**: Print the final report line containing the text \`[CLEANED_DATASET_SUMMARY]\` followed by your findings.`,
+      starter_code: `import pandas as pd
+
+# Raw simulated district survey data (contains duplicates and missing records)
+raw_survey_data = [
+    {"district_id": "D01", "district": "Varanasi", "population": 3676841, "literacy_rate": 75.6},
+    {"district_id": "D02", "district": "Kanpur", "population": 4581268, "literacy_rate": 79.7},
+    {"district_id": "D03", "district": "Prayagraj", "population": None, "literacy_rate": 72.3},
+    {"district_id": "D01", "district": "Varanasi", "population": 3676841, "literacy_rate": 75.6}, # duplicate
+    {"district_id": "D04", "district": "Lucknow", "population": 4589838, "literacy_rate": 82.5},
+    {"district_id": "D05", "district": "Agra", "population": 4418797, "literacy_rate": 92.2},
+]
+
+# Step 1: Create initial DataFrame
+df = pd.DataFrame(raw_survey_data)
+print("Initial records count:", len(df))
+
+# TODO 1: Remove duplicates and set cleaned_row_count
+# df = df.drop_duplicates(...)
+cleaned_row_count = len(df)
+
+# TODO 2: Drop missing population rows and set valid_districts_count
+# df = df.dropna(...)
+valid_districts_count = len(df)
+
+# TODO 3: Compute average literacy rate of cleaned records
+average_literacy = 0.0
+
+# TODO 4: Print summary report with '[CLEANED_DATASET_SUMMARY]' tag
+print("Processing complete.")
+`,
+      tasks: [
+        {
+          id: 'task_dedup',
+          description: 'Deduplicate rows: variable cleaned_row_count equals 5',
+          validation_type: 'variable_equals',
+          validation_config: { variable: 'cleaned_row_count', expected: 5 }
+        },
+        {
+          id: 'task_missing',
+          description: 'Drop records with missing population: valid_districts_count equals 4',
+          validation_type: 'variable_equals',
+          validation_config: { variable: 'valid_districts_count', expected: 4 }
+        },
+        {
+          id: 'task_avg',
+          description: 'Compute mean literacy rate into average_literacy (~82.5%)',
+          validation_type: 'variable_equals',
+          validation_config: { variable: 'average_literacy', expected: 82.5, tolerance: 0.2 }
+        },
+        {
+          id: 'task_print',
+          description: 'Print summary message containing [CLEANED_DATASET_SUMMARY]',
+          validation_type: 'output_contains',
+          validation_config: { substring: '[CLEANED_DATASET_SUMMARY]' }
+        }
+      ]
+    }
+  },
+  {
+    lab_id: 'lab-python-analytics',
+    title: 'Statistical Indicator Estimation & Weighted Sampling',
+    description:
+      'Implement a weighted mean aggregation function to calculate complex survey indicators with sample weight adjustments.',
+    type: 'python_sandbox',
+    course_title: 'Survey Methodology & Sample Estimation',
+    competency_tags: ['Sample Weights', 'Python Estimation', 'Statistical Modeling'],
+    is_active: true,
+    config: {
+      expected_packages: [],
+      instructions: `### Lab Objective: Weighted Mean Estimation
+
+In official sample surveys, observations carry varying probability weights.
+
+#### Tasks:
+1. Define a function \`calculate_weighted_mean(values, weights)\` that returns \`sum(v * w for v, w in zip(values, weights)) / sum(weights)\`.
+2. Compute the weighted estimate for the provided sample vector and print a line containing \`Weighted mean:\`.`,
+      starter_code: `# Implement the official sample weight adjustment function
+def calculate_weighted_mean(values, weights):
+    # TODO: Calculate and return sum(v*w) / sum(w)
+    pass
+
+sample_values = [12, 18, 24, 30]
+sample_weights = [1.0, 2.5, 3.0, 1.5]
+
+result = calculate_weighted_mean(sample_values, sample_weights)
+print("Result computed:", result)
+`,
+      tasks: [
+        {
+          id: 'task_func',
+          description: 'Function calculate_weighted_mean returns correct weighted mean',
+          validation_type: 'function_returns',
+          validation_config: {
+            function: 'calculate_weighted_mean',
+            test_cases: [
+              { args: [[10, 20, 30], [1, 2, 1]], expected: 20 },
+              { args: [[50, 100], [2, 3]], expected: 80 }
+            ]
+          }
+        },
+        {
+          id: 'task_print_weighted',
+          description: 'Print formatted output containing "Weighted mean:"',
+          validation_type: 'output_contains',
+          validation_config: { substring: 'Weighted mean:' }
+        }
+      ]
+    }
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // SQL LABS
+  // ─────────────────────────────────────────────────────────────────────────────
+  {
+    lab_id: 'lab-sql-employees',
+    title: 'Government Personnel Records & Department Queries',
+    description:
+      'Filter, project, and aggregate civil service employee records across government departments using SQLite in WebAssembly.',
+    type: 'sql_sandbox',
+    course_title: 'Public Administration Database Systems',
+    competency_tags: ['SQL Data Extraction', 'Cadre Record Management', 'Relational Filtering'],
+    is_active: true,
+    config: {
+      schema_sql: `CREATE TABLE employees (
+  id INTEGER PRIMARY KEY,
+  name TEXT NOT NULL,
+  department TEXT NOT NULL,
+  designation TEXT NOT NULL,
+  salary INTEGER NOT NULL,
+  join_date TEXT NOT NULL
+);
+
+INSERT INTO employees VALUES (1, 'Priya Nair', 'Statistics', 'Senior Statistical Officer', 82000, '2021-04-15');
+INSERT INTO employees VALUES (2, 'Rajesh Sharma', 'Economics', 'Joint Director', 95000, '2018-09-01');
+INSERT INTO employees VALUES (3, 'Anita Verma', 'Statistics', 'Assistant Director', 74000, '2022-01-10');
+INSERT INTO employees VALUES (4, 'Amitabh Das', 'Administration', 'Section Officer', 68000, '2020-07-20');
+INSERT INTO employees VALUES (5, 'Sneha Mukherjee', 'Finance', 'Accounts Officer', 71000, '2021-11-05');
+INSERT INTO employees VALUES (6, 'Vikram Malhotra', 'Statistics', 'Data Analyst', 64000, '2023-03-12');
+INSERT INTO employees VALUES (7, 'Sunita Rao', 'Economics', 'Senior Research Officer', 88000, '2019-06-18');
+INSERT INTO employees VALUES (8, 'Manoj Kumar', 'Statistics', 'Statistical Officer', 69000, '2022-08-25');
+INSERT INTO employees VALUES (9, 'Deepa Joshi', 'Finance', 'Senior Accounts Officer', 79000, '2020-02-14');
+INSERT INTO employees VALUES (10, 'Sanjay Patel', 'Administration', 'Under Secretary', 92000, '2017-12-01');`,
+      starter_query: `-- Write your SQL query below\nSELECT * FROM employees;`,
+      instructions: `### Lab Objective: Relational Data Querying & Filtering
+
+In government department administration, database queries are essential for generating staffing rosters, payroll breakdowns, and official cadre audits.
+
+#### Schema Reference:
+The database contains an \`employees\` table:
+- \`id\` (INTEGER): Unique employee badge ID
+- \`name\` (TEXT): Employee full name
+- \`department\` (TEXT): Ministry department name ('Statistics', 'Economics', 'Finance', 'Administration')
+- \`designation\` (TEXT): Official cadre designation
+- \`salary\` (INTEGER): Monthly basic pay in INR
+- \`join_date\` (TEXT): Joining date in ISO format ('YYYY-MM-DD')
+
+#### Tasks to Complete:
+1. **Filter Department Records**: Write a query selecting all employees in the 'Statistics' department (\`WHERE department = 'Statistics'\`). The result must return exactly 4 rows.
+2. **List Unique Departments**: Write a query listing distinct department names ordered alphabetically (\`SELECT DISTINCT department FROM employees ORDER BY department ASC\`).
+3. **High-Earning Personnel**: Write a query to select the names of all employees whose salary is 80,000 or greater, ordered by salary descending (\`WHERE salary >= 80000 ORDER BY salary DESC\`).`,
+      tasks: [
+        {
+          id: 'task_stats_dept',
+          description: 'Filter all employees in the Statistics department (expected 4 rows)',
+          validation_type: 'row_count_equals',
+          validation_config: { expected_row_count: 4 }
+        },
+        {
+          id: 'task_distinct_depts',
+          description: 'List distinct departments alphabetically: Administration, Economics, Finance, Statistics',
+          validation_type: 'column_values_match',
+          validation_config: {
+            column: 'department',
+            expected_values: ['Administration', 'Economics', 'Finance', 'Statistics'],
+            strict_order: true
+          }
+        },
+        {
+          id: 'task_high_salary',
+          description: 'List names of officers with salary >= 80000 ordered by salary DESC',
+          validation_type: 'column_values_match',
+          validation_config: {
+            column: 'name',
+            expected_values: ['Rajesh Sharma', 'Sanjay Patel', 'Sunita Rao', 'Priya Nair'],
+            strict_order: true
+          }
+        }
+      ]
+    }
+  },
+  {
+    lab_id: 'lab-sql-districts',
+    title: 'District Survey Statistics & Population Analysis',
+    description:
+      'Perform GROUP BY aggregations and computing summary statistics across administrative divisions.',
+    type: 'sql_sandbox',
+    course_title: 'Census & Demographics',
+    competency_tags: ['Demographic Projections', 'SQL Aggregations', 'Survey Grouping'],
+    is_active: true,
+    config: {
+      schema_sql: `CREATE TABLE districts (
+  district_code TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  division TEXT NOT NULL,
+  population INTEGER NOT NULL,
+  literacy_rate REAL NOT NULL
+);
+
+INSERT INTO districts VALUES ('D01', 'Varanasi', 'Eastern', 3676841, 75.6);
+INSERT INTO districts VALUES ('D02', 'Kanpur', 'Central', 4581268, 79.7);
+INSERT INTO districts VALUES ('D03', 'Prayagraj', 'Eastern', 5954391, 72.3);
+INSERT INTO districts VALUES ('D04', 'Lucknow', 'Central', 4589838, 82.5);
+INSERT INTO districts VALUES ('D05', 'Agra', 'Western', 4418797, 92.2);
+INSERT INTO districts VALUES ('D06', 'Meerut', 'Western', 3443689, 72.8);`,
+      starter_query: `-- Calculate statistics by administrative division\nSELECT division, COUNT(*) as district_count, AVG(literacy_rate) as avg_literacy\nFROM districts\nGROUP BY division;`,
+      instructions: `### Lab Objective: Group Aggregations & Division Summaries
+
+Learn to compute district-level aggregates per administrative division.
+
+#### Tasks:
+1. Select division and count of districts per division grouped by division. Result must return 3 rows.
+2. Result contains the Eastern division summary.`,
+      tasks: [
+        {
+          id: 'task_group_count',
+          description: 'Group districts by division (returns exactly 3 division rows)',
+          validation_type: 'row_count_equals',
+          validation_config: { expected_row_count: 3 }
+        },
+        {
+          id: 'task_contains_eastern',
+          description: 'Result set contains "Eastern" division summary',
+          validation_type: 'result_contains',
+          validation_config: { value: 'Eastern' }
+        }
+      ]
+    }
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // JAVASCRIPT LABS
+  // ─────────────────────────────────────────────────────────────────────────────
+  {
+    lab_id: 'lab-js-arrays',
+    title: 'Array Manipulation: Filtering, Reduction & Sorting',
+    description:
+      'Process employee records using modern JavaScript array methods: filter by department, calculate total payroll with reduce, and sort by compensation.',
+    type: 'js_sandbox',
+    course_title: 'Modern JavaScript & Web Application Development',
+    competency_tags: ['JavaScript Basics', 'Data Analysis', 'Array Methods', 'IT & Digital Skills'],
+    is_active: true,
+    config: {
+      instructions: `### Lab Objective: JavaScript Array Manipulation
+Learn to process and transform structured collections of objects using standard JavaScript array methods (\`filter\`, \`reduce\`, and \`sort\`).
+
+#### Tasks:
+1. **Filter by Department**: Filter the \`employees\` array to include only records where \`department === "Finance"\`. Store the result in \`financeEmployees\`.
+2. **Compute Total Salary**: Calculate the combined salary of all \`financeEmployees\` using \`.reduce()\`. Store the number in \`totalFinanceSalary\`.
+3. **Sort by Salary**: Create a copy of the \`employees\` array sorted in descending order of salary (highest first). Store the result in \`sortedEmployees\`.
+4. **Log Payroll Summary**: Output a summary containing \`[PAYROLL_SUMMARY]\` via \`console.log\`.`,
+      starter_code: `// Employee records dataset
+const employees = [
+  { id: 1, name: "Aarav Sharma", department: "Engineering", salary: 85000 },
+  { id: 2, name: "Priya Patel", department: "Finance", salary: 72000 },
+  { id: 3, name: "Rohan Verma", department: "Marketing", salary: 58000 },
+  { id: 4, name: "Ananya Iyer", department: "Finance", salary: 75000 },
+  { id: 5, name: "Vikram Singh", department: "Engineering", salary: 92000 },
+  { id: 6, name: "Neha Gupta", department: "Finance", salary: 68000 }
+];
+
+// TODO 1: Filter employees array to keep only those where department === "Finance"
+const financeEmployees = []; // replace with employees.filter(...)
+
+// TODO 2: Calculate the total salary of all financeEmployees using .reduce()
+const totalFinanceSalary = 0; // replace with financeEmployees.reduce(...)
+
+// TODO 3: Sort a copy of the employees array by salary descending (highest first)
+const sortedEmployees = []; // replace with [...employees].sort(...)
+
+// TODO 4: Print summary with the tag '[PAYROLL_SUMMARY]'
+console.log(\`[PAYROLL_SUMMARY] Records processed: \${employees.length}\`);
+`,
+      tasks: [
+        {
+          id: 'task_filter_finance',
+          description: 'Filter to Finance department: financeEmployees has 3 records',
+          validation_type: 'variable_equals',
+          validation_config: { variable: 'financeEmployees.length', expected: 3 }
+        },
+        {
+          id: 'task_total_payroll',
+          description: 'Calculate total Finance payroll: totalFinanceSalary equals 215000',
+          validation_type: 'variable_equals',
+          validation_config: { variable: 'totalFinanceSalary', expected: 215000 }
+        },
+        {
+          id: 'task_sorted_top',
+          description: 'Sort descending: highest earner is "Vikram Singh"',
+          validation_type: 'variable_equals',
+          validation_config: { variable: 'sortedEmployees[0].name', expected: 'Vikram Singh' }
+        },
+        {
+          id: 'task_log_summary',
+          description: 'Log payroll summary report containing "[PAYROLL_SUMMARY]"',
+          validation_type: 'console_output_contains',
+          validation_config: { expected: '[PAYROLL_SUMMARY]' }
+        }
+      ]
+    }
+  },
+  {
+    lab_id: 'lab-js-strings',
+    title: 'String Processing & Text Normalization',
+    description:
+      'Clean noisy user feedback, normalize casing, tokenize sentences into word arrays, and count word frequencies.',
+    type: 'js_sandbox',
+    course_title: 'Modern JavaScript & Web Application Development',
+    competency_tags: ['JavaScript Basics', 'Text Processing', 'IT & Digital Skills', 'String Manipulation'],
+    is_active: true,
+    config: {
+      instructions: `### Lab Objective: Text Cleaning & Normalization
+Practice cleaning unformatted text input using JavaScript string manipulation methods (\`trim\`, \`toLowerCase\`, and \`split\`).
+
+#### Tasks:
+1. **Normalize Text**: Trim leading/trailing whitespace and convert \`rawFeedback\` to lowercase. Store the string in \`cleanedText\`.
+2. **Tokenize Words**: Split \`cleanedText\` by spaces into an array of words stored in \`wordsArray\`.
+3. **Word Count**: Calculate the length of \`wordsArray\` and assign it to \`wordCount\`.
+4. **Keyword Detection**: Implement \`hasKeyword(text, keyword)\` returning true if the keyword exists in the text.
+5. **Log Processing Summary**: Print a report containing \`[TEXT_PROCESSED_SUMMARY]\` via \`console.log\`.`,
+      starter_code: `// Raw unformatted user feedback with extra whitespace and irregular casing
+const rawFeedback = "   EXCELLENT platform with Interactive virtual LABS and Helpful mentors!   ";
+
+// TODO 1: Trim leading/trailing whitespace and convert rawFeedback to lowercase
+const cleanedText = ""; // replace with rawFeedback.trim().toLowerCase()
+
+// TODO 2: Split cleanedText into an array of words (separated by space)
+const wordsArray = []; // replace with cleanedText.split(/\\s+/)
+
+// TODO 3: Count the total number of words in wordsArray
+const wordCount = 0; // replace with wordsArray.length
+
+// TODO 4: Write a helper function 'hasKeyword(text, keyword)' that returns true if text contains keyword (case-insensitive)
+function hasKeyword(text, keyword) {
+  // return boolean
+  return false;
+}
+
+// TODO 5: Log processing summary report
+console.log(\`[TEXT_PROCESSED_SUMMARY] Words counted: \${wordCount}\`);
+`,
+      tasks: [
+        {
+          id: 'task_clean_text',
+          description: 'Trim and lowercase feedback: cleanedText starts with "excellent"',
+          validation_type: 'variable_equals',
+          validation_config: {
+            variable: 'cleanedText',
+            expected: 'excellent platform with interactive virtual labs and helpful mentors!'
+          }
+        },
+        {
+          id: 'task_word_count',
+          description: 'Count words in tokenized array: wordCount equals 9',
+          validation_type: 'variable_equals',
+          validation_config: { variable: 'wordCount', expected: 9 }
+        },
+        {
+          id: 'task_function_keyword',
+          description: 'hasKeyword("virtual labs", "labs") returns true',
+          validation_type: 'function_returns',
+          validation_config: { function_name: 'hasKeyword', args: ['virtual labs', 'labs'], expected: true }
+        },
+        {
+          id: 'task_log_text_summary',
+          description: 'Log text processing summary containing "[TEXT_PROCESSED_SUMMARY]"',
+          validation_type: 'console_output_contains',
+          validation_config: { expected: '[TEXT_PROCESSED_SUMMARY]' }
+        }
+      ]
+    }
+  },
+  {
+    lab_id: 'lab-js-async-fetch',
+    title: 'Async JavaScript: Simulated API & Promise Handling',
+    description:
+      'Consume simulated asynchronous REST API endpoints using async/await, handle promises, and aggregate active user statistics.',
+    type: 'js_sandbox',
+    course_title: 'Modern JavaScript & Web Application Development',
+    competency_tags: ['JavaScript Basics', 'Async JavaScript', 'API Integration', 'IT & Digital Skills'],
+    is_active: true,
+    config: {
+      instructions: `### Lab Objective: Asynchronous JavaScript & Promises
+Learn how to work with asynchronous data using \`async\` and \`await\` to consume simulated REST API responses.
+
+#### Tasks:
+1. **Fetch & Filter Data**: In \`loadAndProcessUsers\`, await \`mockFetchUsers()\`, filter records where \`status === "active"\`, and return the array.
+2. **Active User Count**: Assign the count of active users to \`activeUserCount\` (expected: 3).
+3. **Aggregate Points**: Compute the sum of \`points\` across active users and store in \`totalActivePoints\` (expected: 1950).
+4. **Log Summary**: Log completion line containing \`[ASYNC_FETCH_COMPLETE]\`.`,
+      starter_code: `// Simulated API service (network delay simulated with Promise)
+function mockFetchUsers() {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve([
+        { id: 101, username: "dev_karan", status: "active", points: 450 },
+        { id: 102, username: "sarah_m", status: "inactive", points: 120 },
+        { id: 103, username: "rahul_ai", status: "active", points: 890 },
+        { id: 104, username: "tanya_c", status: "active", points: 610 },
+        { id: 105, username: "amit_99", status: "pending", points: 50 }
+      ]);
+    }, 50);
+  });
+}
+
+// Global variables to populate
+let activeUsers = [];
+let activeUserCount = 0;
+let totalActivePoints = 0;
+
+// TODO 1: Implement an async function to fetch users and filter active accounts
+async function loadAndProcessUsers() {
+  // 1. Await mockFetchUsers()
+  // 2. Filter records where status === 'active' -> assign to activeUsers
+  // 3. Set activeUserCount = activeUsers.length
+  // 4. Calculate sum of points for active users -> assign to totalActivePoints
+  // 5. Return activeUsers
+  return [];
+}
+
+// Call the function
+loadAndProcessUsers().then(() => {
+  console.log(\`[ASYNC_FETCH_COMPLETE] Active users: \${activeUserCount}, Total points: \${totalActivePoints}\`);
+});
+`,
+      tasks: [
+        {
+          id: 'task_async_fetch',
+          description: 'loadAndProcessUsers returns array of 3 active users',
+          validation_type: 'function_returns',
+          validation_config: { function_name: 'loadAndProcessUsers', is_async: true, expected_length: 3 }
+        },
+        {
+          id: 'task_active_count',
+          description: 'activeUserCount equals 3',
+          validation_type: 'variable_equals',
+          validation_config: { variable: 'activeUserCount', expected: 3 }
+        },
+        {
+          id: 'task_total_points',
+          description: 'totalActivePoints equals 1950 (450 + 890 + 610)',
+          validation_type: 'variable_equals',
+          validation_config: { variable: 'totalActivePoints', expected: 1950 }
+        },
+        {
+          id: 'task_log_async_summary',
+          description: 'Log summary containing "[ASYNC_FETCH_COMPLETE]"',
+          validation_type: 'console_output_contains',
+          validation_config: { expected: '[ASYNC_FETCH_COMPLETE]' }
+        }
+      ]
+    }
+  },
+  {
+    lab_id: 'lab-js-calculator',
+    title: 'Core Functions: Arithmetic Calculator & Input Validation',
+    description:
+      'Build a robust arithmetic calculation function supporting addition, subtraction, multiplication, division, and error handling for zero division.',
+    type: 'js_sandbox',
+    course_title: 'Modern JavaScript & Web Application Development',
+    competency_tags: ['JavaScript Basics', 'Functions & Logic', 'Error Handling', 'IT & Digital Skills'],
+    is_active: true,
+    config: {
+      instructions: `### Lab Objective: Functions, Operators & Conditional Logic
+Implement a reusable mathematical calculator function handling basic operations and mathematical boundary checks.
+
+#### Tasks:
+1. **Addition**: \`calculate(20, 30, "add")\` returns \`50\`.
+2. **Multiplication**: \`calculate(7, 8, "multiply")\` returns \`56\`.
+3. **Division by Zero Protection**: \`calculate(10, 0, "divide")\` returns \`"Error: Division by zero"\`.
+4. **Log Report**: Log message containing \`[CALCULATOR_READY]\`.`,
+      starter_code: `/**
+ * Calculator function
+ * @param {number} a - First operand
+ * @param {number} b - Second operand
+ * @param {string} operation - "add", "subtract", "multiply", "divide"
+ * @returns {number|string} Result or error message
+ */
+function calculate(a, b, operation) {
+  // TODO 1: Implement "add", "subtract", "multiply", "divide"
+  // TODO 2: Return "Error: Division by zero" if operation === "divide" and b === 0
+  return 0;
+}
+
+// Sample test calculations
+const sumResult = calculate(45, 15, "add");
+const divResult = calculate(100, 4, "divide");
+const zeroDivResult = calculate(50, 0, "divide");
+
+// TODO 3: Print summary report with tag '[CALCULATOR_READY]'
+console.log(\`[CALCULATOR_READY] Sum: \${sumResult}, Div: \${divResult}\`);
+`,
+      tasks: [
+        {
+          id: 'task_calc_add',
+          description: 'calculate(20, 30, "add") returns 50',
+          validation_type: 'function_returns',
+          validation_config: { function_name: 'calculate', args: [20, 30, 'add'], expected: 50 }
+        },
+        {
+          id: 'task_calc_multiply',
+          description: 'calculate(7, 8, "multiply") returns 56',
+          validation_type: 'function_returns',
+          validation_config: { function_name: 'calculate', args: [7, 8, 'multiply'], expected: 56 }
+        },
+        {
+          id: 'task_calc_zero_div',
+          description: 'calculate(10, 0, "divide") returns "Error: Division by zero"',
+          validation_type: 'function_returns',
+          validation_config: { function_name: 'calculate', args: [10, 0, 'divide'], expected: 'Error: Division by zero' }
+        },
+        {
+          id: 'task_calc_log',
+          description: 'Console output contains "[CALCULATOR_READY]"',
+          validation_type: 'console_output_contains',
+          validation_config: { expected: '[CALCULATOR_READY]' }
+        }
+      ]
+    }
+  },
+  {
+    lab_id: 'lab-js-dates',
+    title: 'Date & Time Utilities: Difference Calculation & Formatting',
+    description:
+      'Calculate the number of calendar days between two dates and format ISO date strings into readable localized Indian date formats.',
+    type: 'js_sandbox',
+    course_title: 'Modern JavaScript & Web Application Development',
+    competency_tags: ['JavaScript Basics', 'Date Processing', 'Utility Functions', 'IT & Digital Skills'],
+    is_active: true,
+    config: {
+      instructions: `### Lab Objective: Date & Time Manipulation
+Practice parsing, formatting, and computing durations between dates using JavaScript's native \`Date\` object.
+
+#### Tasks:
+1. **Days Difference**: Implement \`daysBetween(startDateStr, endDateStr)\` returning whole days difference.
+2. **Date Localization**: Implement \`formatToIndianDate(dateStr)\` returning \`"DD/MM/YYYY"\`.
+3. **Log Summary**: Log message containing \`[DATE_UTILITIES_VERIFIED]\`.`,
+      starter_code: `/**
+ * Calculate the number of full days between two date strings (YYYY-MM-DD)
+ */
+function daysBetween(startDateStr, endDateStr) {
+  // TODO 1: Parse dates and calculate whole days difference
+  return 0;
+}
+
+/**
+ * Format date string (YYYY-MM-DD) into DD/MM/YYYY
+ */
+function formatToIndianDate(dateStr) {
+  // TODO 2: Return formatted string "DD/MM/YYYY"
+  return "";
+}
+
+// Sample test usage
+const sampleDays = daysBetween("2026-01-01", "2026-01-11");
+const formattedSample = formatToIndianDate("2026-08-15");
+
+// TODO 3: Print summary containing tag '[DATE_UTILITIES_VERIFIED]'
+console.log(\`[DATE_UTILITIES_VERIFIED] Days diff: \${sampleDays}, Formatted: \${formattedSample}\`);
+`,
+      tasks: [
+        {
+          id: 'task_days_between',
+          description: 'daysBetween("2026-01-01", "2026-01-11") returns 10',
+          validation_type: 'function_returns',
+          validation_config: { function_name: 'daysBetween', args: ['2026-01-01', '2026-01-11'], expected: 10 }
+        },
+        {
+          id: 'task_format_date',
+          description: 'formatToIndianDate("2026-08-15") returns "15/08/2026"',
+          validation_type: 'function_returns',
+          validation_config: { function_name: 'formatToIndianDate', args: ['2026-08-15'], expected: '15/08/2026' }
+        },
+        {
+          id: 'task_date_log',
+          description: 'Console output contains "[DATE_UTILITIES_VERIFIED]"',
+          validation_type: 'console_output_contains',
+          validation_config: { expected: '[DATE_UTILITIES_VERIFIED]' }
+        }
+      ]
+    }
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // HTML/CSS LABS
+  // ─────────────────────────────────────────────────────────────────────────────
+  {
+    lab_id: 'lab-html-profile-card',
+    title: 'Digital Identity: Structure & Style an Official Profile Card',
+    description:
+      'Create a structured digital employee identity card using semantic HTML elements and clean CSS box model styling.',
+    type: 'html_css_sandbox',
+    course_title: 'Digital Documentation & Web Fundamentals',
+    competency_tags: ['Digital Documentation', 'HTML & Web Standards', 'CSS Styling', 'Basic Document Handling', 'IT & Digital Skills'],
+    is_active: true,
+    config: {
+      instructions: `### Lab Objective: Structure and Style a Personnel Profile Card
+
+In digital documentation and government e-office platforms, official employee identification cards require semantic structure and clean, consistent visual styling.
+
+#### Tasks:
+1. **Official Name Header**: Inside \`.profile-card\`, add an \`<h2>\` element containing the name **Ananya Sharma**.
+2. **Designation Paragraph**: Add a \`<p>\` element with class \`designation\` containing **Senior Statistical Officer**.
+3. **Card Border**: Update the \`.profile-card\` rule in CSS so its \`border-style\` is \`solid\`.
+4. **Flexbox Alignment**: Set \`.profile-card\` CSS \`display\` property to \`flex\`.`,
+      starter_html: `<div class="card-container">
+  <div class="profile-card">
+    <div class="avatar-badge">AO</div>
+    <!-- TODO 1: Add an <h2> element with the employee's full name: "Ananya Sharma" -->
+    
+    <!-- TODO 2: Add a <p class="designation"> element with designation: "Senior Statistical Officer" -->
+    
+    <div class="meta-section">
+      <span class="badge">Ministry of Statistics</span>
+      <span class="badge">Employee ID: #ST-8821</span>
+    </div>
+  </div>
+</div>`,
+      starter_css: `body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background-color: #f1f5f9;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  margin: 0;
+}
+
+.profile-card {
+  width: 320px;
+  background-color: #ffffff;
+  padding: 24px;
+  border-radius: 12px;
+  text-align: center;
+  /* TODO 3: Set border-style to "solid" with a 2px border width */
+  border: 2px dashed #cbd5e1;
+  /* TODO 4: Configure display to "flex" and flex-direction to "column" */
+  display: block;
+  align-items: center;
+}
+
+.avatar-badge {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.badge {
+  display: inline-block;
+  background-color: #e0f2fe;
+  color: #0369a1;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  margin: 4px;
+}`,
+      tasks: [
+        {
+          id: 'task_profile_h2',
+          description: 'Add an <h2> element inside .profile-card for the employee name',
+          validation_type: 'element_exists',
+          validation_config: { selector: '.profile-card h2' }
+        },
+        {
+          id: 'task_profile_p',
+          description: 'Add a <p> or <p class="designation"> element for the employee title',
+          validation_type: 'element_exists',
+          validation_config: { selector: '.profile-card p' }
+        },
+        {
+          id: 'task_profile_border',
+          description: 'Set .profile-card border-style to "solid"',
+          validation_type: 'css_property_equals',
+          validation_config: { selector: '.profile-card', property: 'border-style', expected_value: 'solid' }
+        },
+        {
+          id: 'task_profile_display',
+          description: 'Set .profile-card display property to "flex"',
+          validation_type: 'css_property_equals',
+          validation_config: { selector: '.profile-card', property: 'display', expected_value: 'flex' }
+        }
+      ]
+    }
+  },
+  {
+    lab_id: 'lab-html-broken-layout',
+    title: 'Layout Diagnostics: Fix Responsive Multi-Column Alignment',
+    description:
+      'Diagnose and repair a broken multi-column report layout using CSS Flexbox, box-sizing, and responsive spacing.',
+    type: 'html_css_sandbox',
+    course_title: 'Digital Documentation & Web Fundamentals',
+    competency_tags: ['Digital Documentation', 'CSS Layouts', 'Responsive Design', 'IT & Digital Skills'],
+    is_active: true,
+    config: {
+      instructions: `### Lab Objective: Layout Diagnostics & Alignment
+
+In official data portals and administrative dashboards, reports must present metrics side-by-side in balanced multi-column containers. Currently, the dashboard container is stacking columns vertically.
+
+#### Tasks:
+1. **Enable Flexbox Layout**: In \`.container\`, change the \`display\` property from \`block\` to \`flex\` so columns align side-by-side.
+2. **Apply Box Sizing**: In \`.metric-card\`, set \`box-sizing\` to \`border-box\` so padding and borders do not cause overflow.
+3. **Verify Column Count**: Ensure both metric columns remain inside \`.container\` (exact count of 2 child cards).`,
+      starter_html: `<div class="report-wrapper">
+  <header class="report-header">
+    <h1>District Quarterly Performance Metrics</h1>
+    <p>Official monitoring overview for administrative divisions</p>
+  </header>
+
+  <!-- Notice the columns are currently stacking vertically instead of side-by-side -->
+  <div class="container">
+    <div class="metric-card column-left">
+      <h3>Revenue Collection</h3>
+      <p class="number">₹ 42.8 Cr</p>
+      <span class="status positive">+12.4% vs Target</span>
+    </div>
+    <div class="metric-card column-right">
+      <h3>Public Grievances Resolved</h3>
+      <p class="number">98.2%</p>
+      <span class="status positive">3,420 Cases Closed</span>
+    </div>
+  </div>
+</div>`,
+      starter_css: `body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background-color: #f8fafc;
+  color: #1e293b;
+  padding: 30px;
+  margin: 0;
+}
+
+.report-wrapper {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.report-header {
+  margin-bottom: 24px;
+}
+
+/* FIX REQUIRED: The container currently stacks columns vertically. 
+   TODO 1: Change display from 'block' to 'flex' so child columns sit side-by-side. */
+.container {
+  display: block; /* Change this to flex */
+  gap: 20px;
+}
+
+/* FIX REQUIRED: 
+   TODO 2: Set box-sizing to 'border-box' so padding doesn't overflow the columns. */
+.metric-card {
+  box-sizing: content-box; /* Change this to border-box */
+  flex: 1;
+  background: #ffffff;
+  padding: 24px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.number {
+  font-size: 28px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 8px 0;
+}
+
+.status.positive {
+  color: #16a34a;
+  font-size: 13px;
+  font-weight: 600;
+}`,
+      tasks: [
+        {
+          id: 'task_container_flex',
+          description: 'Set .container display property to "flex"',
+          validation_type: 'css_property_equals',
+          validation_config: { selector: '.container', property: 'display', expected_value: 'flex' }
+        },
+        {
+          id: 'task_metric_box_sizing',
+          description: 'Set .metric-card box-sizing to "border-box"',
+          validation_type: 'css_property_equals',
+          validation_config: { selector: '.metric-card', property: 'box-sizing', expected_value: 'border-box' }
+        },
+        {
+          id: 'task_columns_count',
+          description: 'Ensure .container contains exactly 2 .metric-card elements',
+          validation_type: 'element_count_equals',
+          validation_config: { selector: '.container .metric-card', count: 2 }
+        }
+      ]
+    }
+  },
+  {
+    lab_id: 'lab-html-citizen-form',
+    title: 'Citizen Services: Semantic Portal Application Form',
+    description:
+      'Construct an accessible, semantic citizen service application form with descriptive labels and official government portal styling.',
+    type: 'html_css_sandbox',
+    course_title: 'Government Digital Platforms & Citizen Services',
+    competency_tags: ['Digital Documentation', 'Government Digital Platforms', 'Form Accessibility', 'Basic Document Handling'],
+    is_active: true,
+    config: {
+      instructions: `### Lab Objective: Accessible Citizen Services Form
+
+Government digital platforms require accessible, clear semantic form structures with matching descriptive labels and clean action controls.
+
+#### Tasks:
+1. **Applicant Name Label**: Add a \`<label for="applicant_name">\` element inside \`.portal-form\` for the applicant name input.
+2. **District Label**: Add a \`<label for="district">\` element inside \`.portal-form\` for the district input (verifying at least 2 \`<label>\` tags exist).
+3. **Action Button Pointer**: In CSS, update \`.submit-btn\` so its \`cursor\` property is \`pointer\`.
+4. **Action Confirmation**: Ensure the \`.submit-btn\` displays text containing **Submit**.`,
+      starter_html: `<div class="portal-container">
+  <header class="portal-header">
+    <div class="emblem-tag">National e-District Portal</div>
+    <h1>Application for Certificate of Domicile</h1>
+    <p class="subtitle">Please provide accurate applicant details as per official government records.</p>
+  </header>
+
+  <form class="portal-form">
+    <div class="form-group">
+      <!-- TODO 1: Add a <label for="applicant_name">Full Name of Applicant</label> -->
+      
+      <input type="text" id="applicant_name" placeholder="Enter full name" />
+    </div>
+
+    <div class="form-group">
+      <!-- TODO 2: Add a <label for="district">District of Residence</label> -->
+      
+      <input type="text" id="district" placeholder="e.g. Varanasi, Lucknow" />
+    </div>
+
+    <!-- TODO 3 & 4: Style the submit button and ensure it contains the text "Submit Application" -->
+    <button type="button" class="submit-btn">Submit Application</button>
+  </form>
+</div>`,
+      starter_css: `body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background-color: #f0f4f8;
+  color: #1e293b;
+  padding: 40px 20px;
+  margin: 0;
+}
+
+.portal-container {
+  max-width: 520px;
+  margin: 0 auto;
+  background: #ffffff;
+  padding: 32px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border-top: 5px solid #1e40af;
+}
+
+.emblem-tag {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  color: #1e40af;
+  margin-bottom: 6px;
+}
+
+h1 { font-size: 20px; margin: 0 0 6px 0; }
+.subtitle { font-size: 13px; color: #64748b; margin: 0 0 24px 0; }
+.form-group { margin-bottom: 18px; }
+
+.portal-form label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 6px;
+}
+
+.portal-form input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+/* TODO 3: Ensure button has cursor: pointer and prominent government action styling */
+.submit-btn {
+  width: 100%;
+  padding: 12px;
+  background-color: #1e40af;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: default; /* Change to pointer */
+  transition: background-color 0.2s;
+}
+
+.submit-btn:hover { background-color: #1d4ed8; }`,
+      tasks: [
+        {
+          id: 'task_form_labels',
+          description: 'Add descriptive <label> elements for each input (count equals 2)',
+          validation_type: 'element_count_equals',
+          validation_config: { selector: '.portal-form label', count: 2 }
+        },
+        {
+          id: 'task_button_cursor',
+          description: 'Set .submit-btn cursor property to "pointer"',
+          validation_type: 'css_property_equals',
+          validation_config: { selector: '.submit-btn', property: 'cursor', expected_value: 'pointer' }
+        },
+        {
+          id: 'task_button_text',
+          description: 'Ensure .submit-btn text contains "Submit"',
+          validation_type: 'text_content_contains',
+          validation_config: { selector: '.submit-btn', expected_substring: 'Submit' }
+        }
+      ]
+    }
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // SPREADSHEET LABS
+  // ─────────────────────────────────────────────────────────────────────────────
+  {
+    lab_id: 'lab-sheet-payroll-formulas',
+    title: 'Official Payroll Computations: Calculate Compensation with Excel Formulas',
+    description:
+      'Calculate total compensation for administrative staff by entering row addition formulas, department totals with SUM, and benchmark averages using AVERAGE.',
+    type: 'spreadsheet_sandbox',
+    course_title: 'Official Statistical Computing & Survey Analysis',
+    competency_tags: ['Data Analysis', 'Spreadsheet Formulas', 'Digital Documentation'],
+    is_active: true,
+    config: {
+      column_headers: ['Employee ID', 'Staff Name', 'Department', 'Base Salary (₹)', 'DA Allowance (₹)', 'Total Compensation (₹)'],
+      initial_data: [
+        ['EMP-101', 'Aarav Sharma', 'Planning', 45000, 9000, null],
+        ['EMP-102', 'Priya Verma', 'Statistics', 52000, 10400, null],
+        ['EMP-103', 'Kavita Rao', 'Administration', 38000, 7600, null],
+        ['EMP-104', 'Vikram Sen', 'Field Survey', 41000, 8200, null],
+        ['EMP-105', 'Neha Gupta', 'IT Services', 49000, 9800, null],
+        ['Total', '', '', null, null, null],
+        ['Average', '', '', null, null, '']
+      ],
+      instructions: `### Lab Objective: Payroll Computations with Spreadsheet Formulas
+
+In government administrative offices, personnel compensation records must be accurately audited and aggregated using standard spreadsheet formulas. In this lab, you will use arithmetic expressions and aggregation functions to compute staff totals.
+
+#### Grid Coordinates & Cell References:
+- **Row 1** corresponds to Aarav Sharma (\`A1:F1\`).
+- **Column D** is Base Salary (\`D1:D5\`).
+- **Column E** is DA Allowance (\`E1:E5\`).
+- **Column F** is Total Compensation (\`F1:F5\`).
+
+#### Instructions:
+1. **Compute Row Totals**: For each staff member (Rows 1 to 5), enter a formula in Column F to calculate Total Compensation. You can use addition \`=D1+E1\` through \`=D5+E5\`, or \`=SUM(D1:E1)\`.
+2. **Compute Department Grand Total**: In cell **F6** (the Total row), enter \`=SUM(F1:F5)\` to compute total department disbursement.
+3. **Compute Average Base Salary**: In cell **D7** (the Average row), enter \`=AVERAGE(D1:D5)\` to calculate the benchmark mean base pay.`,
+      tasks: [
+        {
+          id: 'task_row_totals',
+          description: 'Calculate Total Compensation for all 5 staff members (Column F)',
+          validation_type: 'column_values_match',
+          validation_config: { col: 5, expected_values: [54000, 62400, 45600, 49200, 58800] }
+        },
+        {
+          id: 'task_grand_total',
+          description: 'Calculate Grand Total in cell F6 using =SUM(F1:F5) (Expected: 270,000)',
+          validation_type: 'cell_value_equals',
+          validation_config: { row: 5, col: 5, expected_value: 270000 }
+        },
+        {
+          id: 'task_average_base',
+          description: 'Calculate Average Base Salary in cell D7 using =AVERAGE(D1:D5) (Expected: 45,000)',
+          validation_type: 'cell_value_equals',
+          validation_config: { row: 6, col: 3, expected_value: 45000 }
+        },
+        {
+          id: 'task_formula_check',
+          description: 'Ensure cell F6 utilizes a spreadsheet formula (starts with "=")',
+          validation_type: 'formula_used',
+          validation_config: { row: 5, col: 5 }
+        }
+      ]
+    }
+  },
+  {
+    lab_id: 'lab-sheet-data-cleanup',
+    title: 'Administrative Registry Cleaning: Deduplication & Text Normalization',
+    description:
+      'Clean raw citizen portal registration records by identifying duplicate entries, removing redundant rows, and normalizing inconsistent department text casing.',
+    type: 'spreadsheet_sandbox',
+    course_title: 'e-Governance & Citizen Portal Management',
+    competency_tags: ['Data Analysis', 'Data Cleaning', 'Administrative Records'],
+    is_active: true,
+    config: {
+      column_headers: ['Application No', 'Applicant Name', 'District', 'Category', 'Status'],
+      initial_data: [
+        ['APP-2024-001', 'Sunil Yadav', 'Varanasi', 'OBC', 'Verified'],
+        ['APP-2024-002', 'Pooja Mishra', 'lucknow', 'General', 'Pending'],
+        ['APP-2024-003', 'Ramesh Kumar', 'KANPUR', 'SC', 'Verified'],
+        ['APP-2024-001', 'Sunil Yadav', 'Varanasi', 'OBC', 'Verified'],
+        ['APP-2024-004', 'Anjali Singh', 'Prayagraj', 'General', 'Verified'],
+        ['APP-2024-005', 'Mohd Tariq', 'LUCKNOW', 'General', 'Pending']
+      ],
+      instructions: `### Lab Objective: Administrative Registry Deduplication & Normalization
+
+Citizen welfare registries often ingest raw entries with casing discrepancies and duplicate submissions. In this lab, you will audit the grid and standardize registry values.
+
+#### Instructions:
+1. **Remove Duplicate Record**: Identify the duplicate submission for \`APP-2024-001\` on Row 4 and remove or clear the duplicate values.
+2. **Standardize District Casing**: Standardize inconsistent text in Column C (District). Change \`lucknow\` and \`LUCKNOW\` to proper title case \`Lucknow\`, and change \`KANPUR\` to \`Kanpur\`.
+3. **Verify Distinct Districts**: Verify that all remaining non-empty districts follow consistent title casing.`,
+      tasks: [
+        {
+          id: 'task_deduplicate',
+          description: 'Remove duplicate registration APP-2024-001 from Row 4',
+          validation_type: 'cell_value_not_equals',
+          validation_config: { row: 3, col: 0, disallowed_value: 'APP-2024-001' }
+        },
+        {
+          id: 'task_casing_lucknow',
+          description: 'Standardize Row 2 District from "lucknow" to "Lucknow"',
+          validation_type: 'cell_value_equals',
+          validation_config: { row: 1, col: 2, expected_value: 'Lucknow' }
+        },
+        {
+          id: 'task_casing_kanpur',
+          description: 'Standardize Row 3 District from "KANPUR" to "Kanpur"',
+          validation_type: 'cell_value_equals',
+          validation_config: { row: 2, col: 2, expected_value: 'Kanpur' }
+        }
+      ]
+    }
+  },
+  {
+    lab_id: 'lab-sheet-scheme-aggregations',
+    title: 'Public Welfare Scheme: Regional Budget Aggregation & Performance',
+    description:
+      'Analyze multi-district DBT disbursement quotas, evaluate target completion rates using percentage formulas, and calculate regional summaries.',
+    type: 'spreadsheet_sandbox',
+    course_title: 'Public Finance & District Resource Management',
+    competency_tags: ['Data Analysis', 'Public Finance', 'Data Visualization'],
+    is_active: true,
+    config: {
+      column_headers: ['District Code', 'District Name', 'Target Allocation (₹ Cr)', 'Actual Disbursed (₹ Cr)', 'Utilization Rate (%)'],
+      initial_data: [
+        ['DIST-01', 'Agra', 120, 108, null],
+        ['DIST-02', 'Meerut', 95, 90.25, null],
+        ['DIST-03', 'Bareilly', 80, 68, null],
+        ['DIST-04', 'Gorakhpur', 110, 104.5, null],
+        ['DIST-05', 'Jhansi', 75, 60, null],
+        ['Total', '', null, null, '']
+      ],
+      instructions: `### Lab Objective: Scheme Budget Aggregation & Key Ratios
+
+Regional directors monitor fund absorption rates to measure public scheme efficiency. In this lab, you will write formulas to determine fund utilization and grand totals.
+
+#### Instructions:
+1. **Compute Utilization Rates**: In Column E (Rows 1 to 5), calculate the fund utilization percentage using formula \`=(D1/C1)*100\` through \`=(D5/C5)*100\`.
+2. **Compute Total Allocated**: In cell **C6**, enter \`=SUM(C1:C5)\` to find the total target budget.
+3. **Compute Total Disbursed**: In cell **D6**, enter \`=SUM(D1:D5)\` to find the total released disbursements.`,
+      tasks: [
+        {
+          id: 'task_utilization_col',
+          description: 'Calculate Utilization Rate (%) in Column E for all 5 districts',
+          validation_type: 'column_values_match',
+          validation_config: { col: 4, expected_values: [90, 95, 85, 95, 80] }
+        },
+        {
+          id: 'task_sum_allocated',
+          description: 'Calculate Total Target Allocation in cell C6 using =SUM(C1:C5) (Expected: 480)',
+          validation_type: 'cell_value_equals',
+          validation_config: { row: 5, col: 2, expected_value: 480 }
+        },
+        {
+          id: 'task_sum_disbursed',
+          description: 'Calculate Total Actual Disbursed in cell D6 using =SUM(D1:D5) (Expected: 430.75)',
+          validation_type: 'cell_value_equals',
+          validation_config: { row: 5, col: 3, expected_value: 430.75 }
+        }
+      ]
+    }
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // REGEX LABS
+  // ─────────────────────────────────────────────────────────────────────────────
+  {
+    lab_id: 'lab-regex-extract-employee-ids',
+    title: 'Personnel Registry: Extract Official Cadre Service IDs',
+    description:
+      'Extract valid Indian Statistical Service (ISS) officer registration codes from administrative transfer notifications using regular expressions.',
+    type: 'regex_sandbox',
+    course_title: 'Data Entry, Verification & Office Automation',
+    competency_tags: ['Data Entry & Validation', 'Document Handling', 'Text Processing', 'Regular Expressions'],
+    is_active: true,
+    config: {
+      mode: 'regex_match',
+      sample_text: `OFFICIAL ORDER NO. 42/2026:
+The following statistical officers have been deputed for field survey oversight:
+1. Shri Rajesh Kumar (Cadre ID: ISS-2016-0842) transferred to Division A.
+2. Smt. Priya Sharma (Registration: ISS-2019-1044) will report to Regional HQ.
+3. Assistant Director Mohan Lal (ISS-2012-0315) assigned to sampling audit.
+4. Field Inspector Anita Sen (ISS-2021-0089) designated as nodal officer.
+
+NOTE FOR VERIFICATION:
+Please ignore temporary batch codes such as ISS-99-12, DEP-2020-0411, and malformed entries like ISS-2023-ABC or ISS-2018-12.`,
+      instructions: `### Lab Objective: Extract Official Cadre Registration Codes
+
+In government administrative records, personnel registration identifiers follow strict departmental numbering schemes. In this lab, you will formulate a regular expression to extract all authentic Indian Statistical Service (ISS) cadre IDs from an administrative notification while rejecting invalid and temporary codes.
+
+#### Target Format:
+- Begins with \`ISS-\`
+- Followed by a 4-digit recruitment year (\`\\d{4}\`)
+- Followed by a hyphen (\`-\`)
+- Followed by a 4-digit sequence number (\`\\d{4}\`)
+
+#### Tasks:
+1. **Match All Valid IDs**: Write a regex that successfully matches all 4 genuine Cadre IDs (\`ISS-2016-0842\`, \`ISS-2019-1044\`, \`ISS-2012-0315\`, \`ISS-2021-0089\`).
+2. **Precision Check**: Ensure the regex does NOT match invalid or non-standard entries (\`ISS-99-12\`, \`DEP-2020-0411\`, \`ISS-2023-ABC\`, \`ISS-2018-12\`).
+3. **Total Match Count**: Ensure the pattern matches exactly 4 items across the entire document.`,
+      tasks: [
+        {
+          id: 'task_match_valid_ids',
+          description: 'Match all 4 valid Cadre IDs in format ISS-YYYY-NNNN',
+          validation_type: 'regex_matches_all',
+          validation_config: {
+            expected_matches: ['ISS-2016-0842', 'ISS-2019-1044', 'ISS-2012-0315', 'ISS-2021-0089']
+          }
+        },
+        {
+          id: 'task_reject_invalid_ids',
+          description: 'Do not match partial or invalid IDs (e.g. ISS-99-12, DEP-2020-0411, ISS-2023-ABC)',
+          validation_type: 'regex_matches_none',
+          validation_config: {
+            disallowed_matches: ['ISS-99-12', 'DEP-2020-0411', 'ISS-2023-ABC', 'ISS-2018-12']
+          }
+        },
+        {
+          id: 'task_count_cadre_matches',
+          description: 'Pattern produces exactly 4 total matches across the document',
+          validation_type: 'regex_match_count_equals',
+          validation_config: { expected_count: 4 }
+        }
+      ]
+    }
+  },
+  {
+    lab_id: 'lab-regex-validate-gov-emails',
+    title: 'Data Cleaning: Validate Official Government Email Formats',
+    description:
+      'Audit citizen grievance correspondence records to isolate authentic official government email addresses and reject malformed submissions.',
+    type: 'regex_sandbox',
+    course_title: 'Data Entry, Verification & Office Automation',
+    competency_tags: ['Data Entry & Validation', 'Email Verification', 'Document Handling', 'IT & Digital Skills'],
+    is_active: true,
+    config: {
+      mode: 'regex_match',
+      sample_text: `Official Communications Directory:
+- Desk Officer: suresh.patel@nic.in
+- Statistical Division: ananya.sharma@upsdc.gov.in
+- Planning Unit: direct.audit@mospi.gov.in
+- Central Monitoring: rajesh.kumar@gov.in
+
+Rejected Submissions:
+- malformed: user@gov..in
+- missing domain: priya.nair@
+- invalid prefix: @nic.in
+- double at: officer@@gov.in
+- wrong extension: test.user@nic.com`,
+      instructions: `### Lab Objective: Government Email Format Validation
+
+Official e-governance platforms require validating government communications against authorized domains (\`nic.in\`, \`gov.in\`, or subdomains like \`*.gov.in\`). In this lab, you will craft a regular expression that filters authentic official addresses and excludes malformed entries.
+
+#### Tasks:
+1. **Match Authentic Government Emails**: Write a regex that matches the 4 official email addresses (\`suresh.patel@nic.in\`, \`ananya.sharma@upsdc.gov.in\`, \`direct.audit@mospi.gov.in\`, \`rajesh.kumar@gov.in\`).
+2. **Exclude Malformed Submissions**: Ensure your pattern rejects malformed entries such as \`user@gov..in\`, \`priya.nair@\`, \`@nic.in\`, \`officer@@gov.in\`, and \`test.user@nic.com\`.
+3. **Exact Total Count**: Verify that the expression matches exactly 4 valid addresses in the sample directory.`,
+      tasks: [
+        {
+          id: 'task_match_valid_emails',
+          description: 'Match all 4 genuine official government email addresses',
+          validation_type: 'regex_matches_all',
+          validation_config: {
+            expected_matches: ['suresh.patel@nic.in', 'ananya.sharma@upsdc.gov.in', 'direct.audit@mospi.gov.in', 'rajesh.kumar@gov.in']
+          }
+        },
+        {
+          id: 'task_reject_malformed_emails',
+          description: 'Reject malformed entries (user@gov..in, priya.nair@, @nic.in, test.user@nic.com)',
+          validation_type: 'regex_matches_none',
+          validation_config: {
+            disallowed_matches: ['user@gov..in', 'priya.nair@', '@nic.in', 'officer@@gov.in', 'test.user@nic.com']
+          }
+        },
+        {
+          id: 'task_count_valid_emails',
+          description: 'Ensure pattern matches exactly 4 official email addresses in the directory',
+          validation_type: 'regex_match_count_equals',
+          validation_config: { expected_count: 4 }
+        }
+      ]
+    }
+  },
+  {
+    lab_id: 'lab-regex-clean-phone-numbers',
+    title: 'Citizen Registry: Standardize Inconsistent Contact Phone Numbers',
+    description:
+      'Standardize unformatted citizen phone numbers with varying spacing, punctuation, and dialing prefixes into uniform +91-XXXXXXXXXX format.',
+    type: 'regex_sandbox',
+    course_title: 'Data Entry, Verification & Office Automation',
+    competency_tags: ['Data Entry & Validation', 'Text Transformation', 'Data Cleaning', 'Document Handling'],
+    is_active: true,
+    config: {
+      mode: 'transform',
+      sample_text: `Citizen Contact List:
+1. Aarav Sharma: +91 98765-43210
+2. Kavita Rao: 09812345678
+3. Vikram Sen: 98765 12345
+4. Neha Gupta: +919823456789`,
+      instructions: `### Lab Objective: Clean and Normalize Citizen Phone Numbers
+
+Citizen registry databases ingest phone numbers in diverse formats with inconsistent spacing, hyphens, and leading zeros. In this lab, you will write a JavaScript text transformation using \`.replace()\` with regular expressions to normalize all 10-digit mobile numbers into the official standard format \`+91-XXXXXXXXXX\`.
+
+#### Expected Standard Format:
+\`+91-\` followed by the 10 numeric digits without internal spaces or dashes (e.g., \`+91-9876543210\`).
+
+#### Tasks:
+1. **Normalize All Phone Numbers**: Transform \`sample_text\` so all 4 contact records display the uniform \`+91-XXXXXXXXXX\` format.
+2. **Output Pattern Verification**: Verify that the transformed output contains exactly 4 standardized entries matching \`+91-XXXXXXXXXX\`.`,
+      tasks: [
+        {
+          id: 'task_normalize_all_numbers',
+          description: 'Normalize all 4 phone numbers into uniform +91-XXXXXXXXXX format',
+          validation_type: 'transform_output_equals',
+          validation_config: {
+            expected_output: `Citizen Contact List:\n1. Aarav Sharma: +91-9876543210\n2. Kavita Rao: +91-9812345678\n3. Vikram Sen: +91-9876512345\n4. Neha Gupta: +91-9823456789`
+          }
+        },
+        {
+          id: 'task_count_normalized',
+          description: 'Verify the transformed output contains exactly 4 numbers starting with "+91-" followed by 10 digits',
+          validation_type: 'regex_match_count_equals',
+          validation_config: { pattern: '\\+91-\\d{10}', expected_count: 4 }
+        }
+      ]
+    }
+  }
+];
+
+/**
+ * Returns a single lab by lab_id from the static catalog.
+ */
+export function getStaticLab(labId) {
+  return STATIC_LABS.find((lab) => lab.lab_id === labId) || null;
+}

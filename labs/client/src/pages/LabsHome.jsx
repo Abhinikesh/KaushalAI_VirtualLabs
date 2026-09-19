@@ -20,6 +20,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { getServiceInfo, getLabsList } from '../services/api';
+import { STATIC_LABS } from '../data/staticLabs';
 
 // Filter tabs for the catalog
 const FILTERS = [
@@ -38,6 +39,7 @@ export default function LabsHome() {
   const [error, setError] = useState(null);
   const [serviceInfo, setServiceInfo] = useState(null);
   const [activeFilter, setActiveFilter] = useState('all');
+  const [usingStaticData, setUsingStaticData] = useState(false);
 
   const mainAppUrl = import.meta.env.VITE_MAIN_APP_URL || 'http://localhost:3000';
 
@@ -46,10 +48,21 @@ export default function LabsHome() {
     setError(null);
     try {
       const data = await getLabsList();
-      setLabs(Array.isArray(data.labs) ? data.labs : []);
+      const apiLabs = Array.isArray(data.labs) ? data.labs : [];
+      if (apiLabs.length > 0) {
+        setLabs(apiLabs);
+        setUsingStaticData(false);
+      } else {
+        // API returned empty — use embedded catalog so users always see labs
+        console.info('[LabsHome] API returned no labs — using embedded static catalog.');
+        setLabs(STATIC_LABS);
+        setUsingStaticData(true);
+      }
     } catch (err) {
-      console.error('Failed to load labs catalog:', err);
-      setError(err.response?.data?.message || 'Could not connect to labs service. Please ensure the backend is running.');
+      // Backend unreachable (Vercel production) — fall back to embedded data
+      console.info('[LabsHome] Backend unreachable — loading embedded static lab catalog.');
+      setLabs(STATIC_LABS);
+      setUsingStaticData(true);
     } finally {
       setLoading(false);
     }
@@ -233,9 +246,9 @@ export default function LabsHome() {
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem' }}>
             <Server size={16} color="#818cf8" />
-            <span style={{ color: '#a5b4fc' }}>Backend API:</span>
-            <code style={{ background: 'rgba(0,0,0,0.35)', padding: '0.15rem 0.5rem', borderRadius: '6px', color: '#34d399', fontWeight: 600 }}>
-              {serviceInfo ? `${serviceInfo.service} (Online)` : 'Connected (Port 5001)'}
+            <span style={{ color: '#a5b4fc' }}>Mode:</span>
+            <code style={{ background: 'rgba(0,0,0,0.35)', padding: '0.15rem 0.5rem', borderRadius: '6px', color: usingStaticData ? '#fde047' : '#34d399', fontWeight: 600 }}>
+              {usingStaticData ? '⚡ Client-Only (No Server)' : (serviceInfo ? `${serviceInfo.service} (Online)` : '✓ API Connected')}
             </code>
           </div>
 
@@ -362,48 +375,26 @@ export default function LabsHome() {
           </div>
         )}
 
-        {/* Error State */}
-        {!loading && error && (
+        {/* Static-data notice banner (shown when running without backend) */}
+        {!loading && usingStaticData && (
           <div
-            className="card"
             style={{
-              padding: '3rem 2rem',
-              textAlign: 'center',
-              border: '1px solid #fecaca',
-              background: '#fef2f2',
-              borderRadius: '16px'
+              padding: '0.75rem 1.25rem',
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
+              border: '1px solid #fde68a',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+              fontSize: '0.8375rem',
+              color: '#92400e'
             }}
           >
-            <div
-              style={{
-                width: 48,
-                height: 48,
-                borderRadius: '50%',
-                background: '#fee2e2',
-                color: '#ef4444',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto 1rem'
-              }}
-            >
-              <AlertCircle size={24} />
-            </div>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#991b1b', marginBottom: '0.5rem' }}>
-              Failed to Connect to Backend Catalog
-            </h3>
-            <p style={{ fontSize: '0.875rem', color: '#b91c1c', maxWidth: 520, margin: '0 auto 1.25rem' }}>
-              {error}
-            </p>
-            <button
-              type="button"
-              onClick={fetchLabsCatalog}
-              className="btn btn-primary"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.875rem', borderRadius: '8px' }}
-            >
-              <RefreshCw size={14} />
-              Retry Connection
-            </button>
+            <Zap size={16} color="#d97706" style={{ flexShrink: 0 }} />
+            <span>
+              <strong>Fully client-side mode</strong> — All 18 labs are available and run 100% in your browser.
+              No server connection required. Progress is tracked locally in this session.
+            </span>
           </div>
         )}
 

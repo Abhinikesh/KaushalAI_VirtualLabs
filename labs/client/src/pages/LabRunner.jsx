@@ -49,6 +49,7 @@ import {
   completeLabAttempt,
   LAB_TOKEN_STORAGE_KEY
 } from '../services/api';
+import { getStaticLab } from '../data/staticLabs';
 import { runPythonCode } from '../utils/pyodideRunner';
 import { validateAllTasks as validateAllPythonTasks } from '../utils/taskValidator';
 import { createDatabaseFromSchema, introspectDatabaseSchema, executeSqlQuery } from '../utils/sqlRunner';
@@ -288,7 +289,7 @@ export default function LabRunner() {
     return () => clearInterval(timerRef.current);
   }, [authStatus, isCompleted]);
 
-  // 2. Load Real Lab Definition from API & Initialize Attempt
+  // 2. Load Real Lab Definition from API (with static fallback) & Initialize Attempt
   useEffect(() => {
     if (authStatus !== 'verified') return;
 
@@ -296,18 +297,28 @@ export default function LabRunner() {
     setLabLoading(true);
     setDataError(null);
 
+    const fetchLabWithFallback = async () => {
+      try {
+        const res = await getLabDetails(labId);
+        return res?.lab || null;
+      } catch (_) {
+        // Backend unreachable — use embedded static catalog
+        console.info('[LabRunner] API unavailable — loading lab from embedded static data.');
+        return getStaticLab(labId);
+      }
+    };
+
     Promise.all([
-      getLabDetails(labId),
+      fetchLabWithFallback(),
       startLabAttempt().catch((err) => {
         console.warn('[LabRunner] Could not start/resume attempt:', err.message);
         return null;
       })
     ])
-      .then(async ([labRes, attemptRes]) => {
+      .then(async ([labData, attemptRes]) => {
         if (!isMounted) return;
-        const labData = labRes?.lab;
         if (!labData) {
-          throw new Error(`Lab configuration for '${labId}' was not returned by the API.`);
+          throw new Error(`Lab '${labId}' was not found. Please go back and select a valid lab.`);
         }
         setLab(labData);
 
